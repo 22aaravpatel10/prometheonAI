@@ -1,0 +1,27 @@
+# terraform/terraform.tfvars.example
+# Copy this file to terraform.tfvars and fill in your values
+
+# AWS Configuration
+aws_region = "us-west-2"
+project_name = "batch-processing"
+environment = "production"
+
+# Database Configuration
+db_password = "your-secure-database-password-here"
+db_instance_class = "db.t3.micro"  # Use db.t3.small or larger for production
+
+# Application Configuration
+jwt_secret = "your-super-secret-jwt-key-change-this-in-production"
+sendgrid_api_key = "your-sendgrid-api-key"  # Optional: leave empty to use SMTP
+from_email = "noreply@yourdomain.com"
+
+# Container Images (update these to your registry)
+frontend_image = "your-registry/batch-processing-frontend:latest"
+backend_image = "your-registry/batch-processing-backend:latest"
+
+# Scaling Configuration
+desired_count = 1  # Start with 1, increase for production load
+
+# Optional: Domain Configuration
+# domain_name = "batch.yourdomain.com"
+# create_certificate = true

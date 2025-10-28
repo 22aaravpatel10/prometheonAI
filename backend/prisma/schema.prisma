@@ -1,0 +1,305 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  planner
+  viewer
+}
+
+enum MaintenanceReason {
+  scheduled
+  breakdown
+  preventive
+  cleaning
+  upgrade
+}
+
+enum NotificationType {
+  batch_reminder
+  maintenance_reminder
+  batch_complete
+  maintenance_complete
+  low_inventory
+}
+
+enum EquipmentStatus {
+  available
+  in_use
+  maintenance
+  offline
+}
+
+enum BatchStatus {
+  scheduled
+  started
+  in_progress
+  completed
+  cancelled
+}
+
+enum RecipeStatus {
+  draft
+  approved
+  active
+  obsolete
+}
+
+model User {
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  role            UserRole @default(viewer)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  createdEquipment Equipment[]
+  notifications    Notification[]
+  createdRecipes   Recipe[]     @relation("RecipeCreator")
+  approvedRecipes  Recipe[]     @relation("RecipeApprover")
+
+  @@map("users")
+}
+
+model Equipment {
+  id                     Int              @id @default(autoincrement())
+  name                   String
+  equipmentId            String?          @map("equipment_id") // Custom ID field
+  location               String?
+  status                 EquipmentStatus  @default(available)
+  size                   Decimal?         @db.Decimal(10, 2)
+  sizeUnit               String?          @map("size_unit") // L, kg, m3, etc.
+  capacity               Decimal?         @db.Decimal(10, 2)
+  capacityUnit           String?          @map("capacity_unit")
+  materialOfConstruction String?          @map("material_of_construction")
+  currentBatchId         Int?             @map("current_batch_id") // Track current batch
+  isCustom               Boolean          @default(false) @map("is_custom")
+  createdByUserId        Int?             @map("created_by_user_id")
+  createdAt              DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  createdBy         User?                   @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  batchEvents       BatchEvent[]
+  maintenanceEvents MaintenanceEvent[]
+  specialFeatures   EquipmentFeature[]
+  recipeSteps       RecipeStep[]
+
+  @@map("equipment")
+}
+
+model EquipmentFeature {
+  id          Int       @id @default(autoincrement())
+  equipmentId Int       @map("equipment_id")
+  name        String
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@map("equipment_features")
+}
+
+model BatchEvent {
+  id             Int         @id @default(autoincrement())
+  equipmentId    Int         @map("equipment_id")
+  batchNo        String      @map("batch_no")
+  productName    String      @map("product_name")
+  batchSize      Decimal?    @map("batch_size") @db.Decimal(10, 2)
+  status         BatchStatus @default(scheduled)
+  recipeId       Int?        @map("recipe_id") // Link to recipe if batch created from recipe
+  recipeVersion  Int?        @map("recipe_version") // Recipe version used
+  recipeNotes    String?     @map("recipe_notes") // Notes about deviations from recipe
+  startTimestamp DateTime    @map("start_timestamp") @db.Timestamptz
+  endTimestamp   DateTime    @map("end_timestamp") @db.Timestamptz
+  actualStart    DateTime?   @map("actual_start") @db.Timestamptz
+  actualEnd      DateTime?   @map("actual_end") @db.Timestamptz
+  inputs         Json?
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  equipment        Equipment              @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  recipe           Recipe?                @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  notifications    Notification[]
+  materials        BatchMaterial[]
+  materialUsage    InventoryTransaction[]
+
+  @@map("batch_events")
+}
+
+model BatchMaterial {
+  id              Int      @id @default(autoincrement())
+  batchEventId    Int      @map("batch_event_id")
+  materialId      Int      @map("material_id")
+  plannedQuantity Decimal  @map("planned_quantity") @db.Decimal(10, 2)
+  actualQuantity  Decimal? @map("actual_quantity") @db.Decimal(10, 2)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  batchEvent BatchEvent @relation(fields: [batchEventId], references: [id], onDelete: Cascade)
+  material   Material   @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@map("batch_materials")
+}
+
+model MaintenanceEvent {
+  id               Int               @id @default(autoincrement())
+  equipmentId      Int               @map("equipment_id")
+  reason           MaintenanceReason
+  expectedDuration String?           @map("expected_duration")
+  supervisorName   String?           @map("supervisor_name")
+  spareParts       Json?             @map("spare_parts")
+  changesMade      String?           @map("changes_made")
+  startTimestamp   DateTime          @map("start_timestamp") @db.Timestamptz
+  endTimestamp     DateTime          @map("end_timestamp") @db.Timestamptz
+  actualStart      DateTime?         @map("actual_start") @db.Timestamptz
+  actualEnd        DateTime?         @map("actual_end") @db.Timestamptz
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  equipment     Equipment      @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  notifications Notification[]
+
+  @@map("maintenance_events")
+}
+
+model Notification {
+  id                  Int              @id @default(autoincrement())
+  userId              Int              @map("user_id")
+  batchEventId        Int?             @map("batch_event_id")
+  maintenanceEventId  Int?             @map("maintenance_event_id")
+  sentTimestamp       DateTime         @map("sent_timestamp") @db.Timestamptz
+  type                NotificationType
+  message             String?
+  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batchEvent      BatchEvent?       @relation(fields: [batchEventId], references: [id], onDelete: Cascade)
+  maintenanceEvent MaintenanceEvent? @relation(fields: [maintenanceEventId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Material {
+  id               Int      @id @default(autoincrement())
+  materialId       String?  @map("material_id") // Custom ID field
+  name             String
+  currentQuantity  Decimal  @default(0) @map("current_quantity") @db.Decimal(10, 2)
+  unit             String   // kg, liters, units, etc.
+  minimumStock     Decimal  @map("minimum_stock") @db.Decimal(10, 2)
+  supplier         String?
+  costPerUnit      Decimal? @map("cost_per_unit") @db.Decimal(10, 2)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  batchMaterials  BatchMaterial[]
+  transactions    InventoryTransaction[]
+  recipeMaterials RecipeMaterial[]
+
+  @@map("materials")
+}
+
+model InventoryTransaction {
+  id               Int       @id @default(autoincrement())
+  materialId       Int       @map("material_id")
+  batchEventId     Int?      @map("batch_event_id")
+  transactionType  String    @map("transaction_type") // consumed, received, adjusted
+  quantity         Decimal   @db.Decimal(10, 2)
+  remainingBalance Decimal   @map("remaining_balance") @db.Decimal(10, 2)
+  notes            String?
+  timestamp        DateTime  @default(now()) @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  material   Material    @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  batchEvent BatchEvent? @relation(fields: [batchEventId], references: [id], onDelete: SetNull)
+
+  @@map("inventory_transactions")
+}
+
+model Recipe {
+  id              Int          @id @default(autoincrement())
+  recipeId        String?      @map("recipe_id") // Custom ID
+  name            String
+  product         String       // Product/SKU name
+  version         Int          @default(1)
+  yield           Decimal?     @db.Decimal(10, 2) // Expected output quantity
+  yieldUnit       String?      @map("yield_unit")
+  totalTime       Int?         @map("total_time") // Total estimated time in minutes
+  status          RecipeStatus @default(draft)
+  description     String?
+  createdByUserId Int?         @map("created_by_user_id")
+  approvedByUserId Int?        @map("approved_by_user_id")
+  approvedAt      DateTime?    @map("approved_at") @db.Timestamptz
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  createdBy    User?          @relation("RecipeCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  approvedBy   User?          @relation("RecipeApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  steps        RecipeStep[]
+  materials    RecipeMaterial[]
+  batches      BatchEvent[]
+
+  @@map("recipes")
+}
+
+model RecipeStep {
+  id                 Int      @id @default(autoincrement())
+  recipeId           Int      @map("recipe_id")
+  stepNumber         Int      @map("step_number")
+  name               String
+  description        String?
+  equipmentId        Int?     @map("equipment_id")
+  duration           Int?     // Duration in minutes
+  temperature        Decimal? @db.Decimal(10, 2)
+  temperatureUnit    String?  @map("temperature_unit") // C, F, K
+  pressure           Decimal? @db.Decimal(10, 2)
+  pressureUnit       String?  @map("pressure_unit") // bar, psi, atm
+  instructions       String?
+  processParameters  Json?    @map("process_parameters") // Additional parameters as JSON
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  recipe    Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  equipment Equipment? @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+
+  @@unique([recipeId, stepNumber])
+  @@map("recipe_steps")
+}
+
+model RecipeMaterial {
+  id           Int      @id @default(autoincrement())
+  recipeId     Int      @map("recipe_id")
+  stepNumber   Int?     @map("step_number") // Which step this material is used in
+  materialId   Int      @map("material_id")
+  quantity     Decimal  @db.Decimal(10, 2)
+  unit         String
+  timingNotes  String?  @map("timing_notes") // e.g., "Add slowly over 30min"
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@map("recipe_materials")
+}
