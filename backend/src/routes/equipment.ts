@@ -8,6 +8,14 @@ const prisma = new PrismaClient();
 
 const equipmentSchema = Joi.object({
   name: Joi.string().required(),
+  equipmentId: Joi.string().allow('', null).optional(),
+  location: Joi.string().allow('', null).optional(),
+  status: Joi.string().valid('available', 'in_use', 'maintenance', 'offline').default('available'),
+  size: Joi.number().allow(null).optional(),
+  sizeUnit: Joi.string().allow('', null).optional(),
+  capacity: Joi.number().allow(null).optional(),
+  capacityUnit: Joi.string().allow('', null).optional(),
+  materialOfConstruction: Joi.string().allow('', null).optional(),
   isCustom: Joi.boolean().default(true)
 });
 

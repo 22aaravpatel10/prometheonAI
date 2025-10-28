@@ -8,6 +8,14 @@ import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 interface Equipment {
   id: number;
   name: string;
+  equipmentId?: string | null;
+  location?: string | null;
+  status: 'available' | 'in_use' | 'maintenance' | 'offline';
+  size?: number | null;
+  sizeUnit?: string | null;
+  capacity?: number | null;
+  capacityUnit?: string | null;
+  materialOfConstruction?: string | null;
   isCustom: boolean;
   createdBy?: {
     email: string;
@@ -24,8 +32,17 @@ const Equipment: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
+  const [isQuickAdd, setIsQuickAdd] = useState(false);
   const [formData, setFormData] = useState({
-    name: ''
+    name: '',
+    equipmentId: '',
+    location: '',
+    status: 'available' as 'available' | 'in_use' | 'maintenance' | 'offline',
+    size: '',
+    sizeUnit: '',
+    capacity: '',
+    capacityUnit: '',
+    materialOfConstruction: ''
   });
 
   const commonEquipmentTypes = [
@@ -59,40 +76,84 @@ const Equipment: React.FC = () => {
 
   const handleCreate = () => {
     setEditingEquipment(null);
-    setFormData({ name: '' });
+    setIsQuickAdd(false);
+    setFormData({
+      name: '',
+      equipmentId: '',
+      location: '',
+      status: 'available',
+      size: '',
+      sizeUnit: '',
+      capacity: '',
+      capacityUnit: '',
+      materialOfConstruction: ''
+    });
     setIsModalOpen(true);
   };
 
   const handleEdit = (eq: Equipment) => {
     setEditingEquipment(eq);
-    setFormData({ name: eq.name });
+    setIsQuickAdd(false);
+    setFormData({
+      name: eq.name,
+      equipmentId: eq.equipmentId || '',
+      location: eq.location || '',
+      status: eq.status,
+      size: eq.size?.toString() || '',
+      sizeUnit: eq.sizeUnit || '',
+      capacity: eq.capacity?.toString() || '',
+      capacityUnit: eq.capacityUnit || '',
+      materialOfConstruction: eq.materialOfConstruction || ''
+    });
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
+      // Prepare data with proper types
+      const submitData = {
+        name: formData.name,
+        equipmentId: formData.equipmentId || null,
+        location: formData.location || null,
+        status: formData.status,
+        size: formData.size ? parseFloat(formData.size) : null,
+        sizeUnit: formData.sizeUnit || null,
+        capacity: formData.capacity ? parseFloat(formData.capacity) : null,
+        capacityUnit: formData.capacityUnit || null,
+        materialOfConstruction: formData.materialOfConstruction || null,
+        isCustom: editingEquipment ? editingEquipment.isCustom : !isQuickAdd
+      };
+
       if (editingEquipment) {
         // Update existing equipment
-        const response = await axios.put(`/equipment/${editingEquipment.id}`, formData);
-        setEquipment(prev => prev.map(eq => 
+        const response = await axios.put(`/equipment/${editingEquipment.id}`, submitData);
+        setEquipment(prev => prev.map(eq =>
           eq.id === editingEquipment.id ? response.data : eq
         ));
         toast.success('Equipment updated successfully');
       } else {
         // Create new equipment
-        const response = await axios.post('/equipment', {
-          ...formData,
-          isCustom: true
-        });
+        const response = await axios.post('/equipment', submitData);
         setEquipment(prev => [...prev, response.data]);
         toast.success('Equipment created successfully');
       }
-      
+
       setIsModalOpen(false);
       setEditingEquipment(null);
-      setFormData({ name: '' });
+      setIsQuickAdd(false);
+      setFormData({
+        name: '',
+        equipmentId: '',
+        location: '',
+        status: 'available',
+        size: '',
+        sizeUnit: '',
+        capacity: '',
+        capacityUnit: '',
+        materialOfConstruction: ''
+      });
     } catch (error: any) {
       console.error('Error saving equipment:', error);
       const message = error.response?.data?.error || 'Failed to save equipment';
@@ -116,19 +177,22 @@ const Equipment: React.FC = () => {
     }
   };
 
-  const handleQuickAdd = async (name: string) => {
-    try {
-      const response = await axios.post('/equipment', {
-        name,
-        isCustom: false
-      });
-      setEquipment(prev => [...prev, response.data]);
-      toast.success(`${name} added successfully`);
-    } catch (error: any) {
-      console.error('Error adding equipment:', error);
-      const message = error.response?.data?.error || 'Failed to add equipment';
-      toast.error(message);
-    }
+  const handleQuickAdd = (name: string) => {
+    // Open modal with pre-filled name and default values for other fields
+    setEditingEquipment(null);
+    setIsQuickAdd(true);
+    setFormData({
+      name: name,
+      equipmentId: '',
+      location: '',
+      status: 'available',
+      size: '',
+      sizeUnit: '',
+      capacity: '',
+      capacityUnit: '',
+      materialOfConstruction: ''
+    });
+    setIsModalOpen(true);
   };
 
   const canEdit = user?.role !== 'viewer';
@@ -243,7 +307,7 @@ const Equipment: React.FC = () => {
       {/* Modal */}
       {isModalOpen && (
         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-900">
                 {editingEquipment ? 'Edit Equipment' : 'Add Custom Equipment'}
@@ -260,18 +324,121 @@ const Equipment: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Equipment Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                  placeholder="Enter equipment name"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Equipment Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                    placeholder="Enter equipment name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Equipment ID
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.equipmentId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, equipmentId: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter equipment ID"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter location"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="available">Available</option>
+                    <option value="in_use">In Use</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="offline">Offline</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Size
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.size}
+                      onChange={(e) => setFormData(prev => ({ ...prev, size: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Size"
+                    />
+                    <input
+                      type="text"
+                      value={formData.sizeUnit}
+                      onChange={(e) => setFormData(prev => ({ ...prev, sizeUnit: e.target.value }))}
+                      className="w-24 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Unit"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Capacity
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.capacity}
+                      onChange={(e) => setFormData(prev => ({ ...prev, capacity: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Capacity"
+                    />
+                    <input
+                      type="text"
+                      value={formData.capacityUnit}
+                      onChange={(e) => setFormData(prev => ({ ...prev, capacityUnit: e.target.value }))}
+                      className="w-24 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Unit"
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Material of Construction
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.materialOfConstruction}
+                    onChange={(e) => setFormData(prev => ({ ...prev, materialOfConstruction: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Stainless Steel 316L"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
