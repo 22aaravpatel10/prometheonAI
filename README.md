@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Batch Processing Assistant
 
 A comprehensive web application for managing batch production schedules and maintenance events in manufacturing environments.
@@ -363,3 +364,6 @@ For support and questions:
 - [ ] Advanced workflow automation
 - [ ] Multi-tenant architecture
 - [ ] Real-time notifications via WebSocket
+=======
+# batchscheduler
+>>>>>>> 9e7bcbfcbf6e4b87336d926444d5815e23a68193
