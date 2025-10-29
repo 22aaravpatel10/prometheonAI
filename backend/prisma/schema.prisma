@@ -54,42 +54,66 @@ enum RecipeStatus {
   obsolete
 }
 
+enum HazardClassification {
+  flammable
+  corrosive
+  toxic
+  irritant
+  oxidizer
+  explosive
+  compressed_gas
+  carcinogenic
+  mutagenic
+  reproductive_toxin
+  environmental_hazard
+  acute_toxicity
+  health_hazard
+}
+
+enum SDSStatus {
+  current
+  expiring_soon
+  expired
+  under_review
+}
+
 model User {
-  id              Int      @id @default(autoincrement())
-  email           String   @unique
-  passwordHash    String   @map("password_hash")
-  role            UserRole @default(viewer)
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(viewer)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
   createdEquipment Equipment[]
   notifications    Notification[]
-  createdRecipes   Recipe[]     @relation("RecipeCreator")
-  approvedRecipes  Recipe[]     @relation("RecipeApprover")
+  createdRecipes   Recipe[]          @relation("RecipeCreator")
+  approvedRecipes  Recipe[]          @relation("RecipeApprover")
+  uploadedSDS      SafetyDataSheet[]
 
   @@map("users")
 }
 
 model Equipment {
-  id                     Int              @id @default(autoincrement())
+  id                     Int             @id @default(autoincrement())
   name                   String
-  equipmentId            String?          @map("equipment_id") // Custom ID field
+  equipmentId            String?         @map("equipment_id") // Custom ID field
   location               String?
-  status                 EquipmentStatus  @default(available)
-  size                   Decimal?         @db.Decimal(10, 2)
-  sizeUnit               String?          @map("size_unit") // L, kg, m3, etc.
-  capacity               Decimal?         @db.Decimal(10, 2)
-  capacityUnit           String?          @map("capacity_unit")
-  materialOfConstruction String?          @map("material_of_construction")
-  currentBatchId         Int?             @map("current_batch_id") // Track current batch
-  isCustom               Boolean          @default(false) @map("is_custom")
-  createdByUserId        Int?             @map("created_by_user_id")
-  createdAt              DateTime         @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt              DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  status                 EquipmentStatus @default(available)
+  size                   Decimal?        @db.Decimal(10, 2)
+  sizeUnit               String?         @map("size_unit") // L, kg, m3, etc.
+  capacity               Decimal?        @db.Decimal(10, 2)
+  capacityUnit           String?         @map("capacity_unit")
+  materialOfConstruction String?         @map("material_of_construction")
+  currentBatchId         Int?            @map("current_batch_id") // Track current batch
+  isCustom               Boolean         @default(false) @map("is_custom")
+  createdByUserId        Int?            @map("created_by_user_id")
+  createdAt              DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime        @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  createdBy         User?                   @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdBy         User?              @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
   batchEvents       BatchEvent[]
   maintenanceEvents MaintenanceEvent[]
   specialFeatures   EquipmentFeature[]
@@ -99,12 +123,12 @@ model Equipment {
 }
 
 model EquipmentFeature {
-  id          Int       @id @default(autoincrement())
-  equipmentId Int       @map("equipment_id")
+  id          Int      @id @default(autoincrement())
+  equipmentId Int      @map("equipment_id")
   name        String
   description String?
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
   equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
@@ -131,11 +155,11 @@ model BatchEvent {
   updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  equipment        Equipment              @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  recipe           Recipe?                @relation(fields: [recipeId], references: [id], onDelete: SetNull)
-  notifications    Notification[]
-  materials        BatchMaterial[]
-  materialUsage    InventoryTransaction[]
+  equipment     Equipment              @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  recipe        Recipe?                @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  notifications Notification[]
+  materials     BatchMaterial[]
+  materialUsage InventoryTransaction[]
 
   @@map("batch_events")
 }
@@ -179,53 +203,55 @@ model MaintenanceEvent {
 }
 
 model Notification {
-  id                  Int              @id @default(autoincrement())
-  userId              Int              @map("user_id")
-  batchEventId        Int?             @map("batch_event_id")
-  maintenanceEventId  Int?             @map("maintenance_event_id")
-  sentTimestamp       DateTime         @map("sent_timestamp") @db.Timestamptz
-  type                NotificationType
-  message             String?
-  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  id                 Int              @id @default(autoincrement())
+  userId             Int              @map("user_id")
+  batchEventId       Int?             @map("batch_event_id")
+  maintenanceEventId Int?             @map("maintenance_event_id")
+  sentTimestamp      DateTime         @map("sent_timestamp") @db.Timestamptz
+  type               NotificationType
+  message            String?
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz
 
   // Relations
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  batchEvent      BatchEvent?       @relation(fields: [batchEventId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batchEvent       BatchEvent?       @relation(fields: [batchEventId], references: [id], onDelete: Cascade)
   maintenanceEvent MaintenanceEvent? @relation(fields: [maintenanceEventId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }
 
 model Material {
-  id               Int      @id @default(autoincrement())
-  materialId       String?  @map("material_id") // Custom ID field
-  name             String
-  currentQuantity  Decimal  @default(0) @map("current_quantity") @db.Decimal(10, 2)
-  unit             String   // kg, liters, units, etc.
-  minimumStock     Decimal  @map("minimum_stock") @db.Decimal(10, 2)
-  supplier         String?
-  costPerUnit      Decimal? @map("cost_per_unit") @db.Decimal(10, 2)
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id              Int      @id @default(autoincrement())
+  materialId      String?  @map("material_id") // Custom ID field
+  name            String
+  currentQuantity Decimal  @default(0) @map("current_quantity") @db.Decimal(10, 2)
+  unit            String // kg, liters, units, etc.
+  minimumStock    Decimal  @map("minimum_stock") @db.Decimal(10, 2)
+  supplier        String?
+  costPerUnit     Decimal? @map("cost_per_unit") @db.Decimal(10, 2)
+  casNumber       String?  @map("cas_number") // CAS Registry Number
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  batchMaterials  BatchMaterial[]
-  transactions    InventoryTransaction[]
-  recipeMaterials RecipeMaterial[]
+  batchMaterials   BatchMaterial[]
+  transactions     InventoryTransaction[]
+  recipeMaterials  RecipeMaterial[]
+  safetyDataSheets SafetyDataSheet[]
 
   @@map("materials")
 }
 
 model InventoryTransaction {
-  id               Int       @id @default(autoincrement())
-  materialId       Int       @map("material_id")
-  batchEventId     Int?      @map("batch_event_id")
-  transactionType  String    @map("transaction_type") // consumed, received, adjusted
-  quantity         Decimal   @db.Decimal(10, 2)
-  remainingBalance Decimal   @map("remaining_balance") @db.Decimal(10, 2)
+  id               Int      @id @default(autoincrement())
+  materialId       Int      @map("material_id")
+  batchEventId     Int?     @map("batch_event_id")
+  transactionType  String   @map("transaction_type") // consumed, received, adjusted
+  quantity         Decimal  @db.Decimal(10, 2)
+  remainingBalance Decimal  @map("remaining_balance") @db.Decimal(10, 2)
   notes            String?
-  timestamp        DateTime  @default(now()) @db.Timestamptz
-  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  timestamp        DateTime @default(now()) @db.Timestamptz
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   // Relations
   material   Material    @relation(fields: [materialId], references: [id], onDelete: Cascade)
@@ -235,71 +261,145 @@ model InventoryTransaction {
 }
 
 model Recipe {
-  id              Int          @id @default(autoincrement())
-  recipeId        String?      @map("recipe_id") // Custom ID
-  name            String
-  product         String       // Product/SKU name
-  version         Int          @default(1)
-  yield           Decimal?     @db.Decimal(10, 2) // Expected output quantity
-  yieldUnit       String?      @map("yield_unit")
-  totalTime       Int?         @map("total_time") // Total estimated time in minutes
-  status          RecipeStatus @default(draft)
-  description     String?
-  createdByUserId Int?         @map("created_by_user_id")
-  approvedByUserId Int?        @map("approved_by_user_id")
-  approvedAt      DateTime?    @map("approved_at") @db.Timestamptz
-  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  id               Int          @id @default(autoincrement())
+  recipeId         String?      @map("recipe_id") // Custom ID
+  name             String
+  product          String // Product/SKU name
+  version          Int          @default(1)
+  yield            Decimal?     @db.Decimal(10, 2) // Expected output quantity
+  yieldUnit        String?      @map("yield_unit")
+  totalTime        Int?         @map("total_time") // Total estimated time in minutes
+  status           RecipeStatus @default(draft)
+  description      String?
+  createdByUserId  Int?         @map("created_by_user_id")
+  approvedByUserId Int?         @map("approved_by_user_id")
+  approvedAt       DateTime?    @map("approved_at") @db.Timestamptz
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  createdBy    User?          @relation("RecipeCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  approvedBy   User?          @relation("RecipeApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
-  steps        RecipeStep[]
-  materials    RecipeMaterial[]
-  batches      BatchEvent[]
+  createdBy  User?            @relation("RecipeCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  approvedBy User?            @relation("RecipeApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  steps      RecipeStep[]
+  materials  RecipeMaterial[]
+  batches    BatchEvent[]
 
   @@map("recipes")
 }
 
 model RecipeStep {
-  id                 Int      @id @default(autoincrement())
-  recipeId           Int      @map("recipe_id")
-  stepNumber         Int      @map("step_number")
-  name               String
-  description        String?
-  equipmentId        Int?     @map("equipment_id")
-  duration           Int?     // Duration in minutes
-  temperature        Decimal? @db.Decimal(10, 2)
-  temperatureUnit    String?  @map("temperature_unit") // C, F, K
-  pressure           Decimal? @db.Decimal(10, 2)
-  pressureUnit       String?  @map("pressure_unit") // bar, psi, atm
-  instructions       String?
-  processParameters  Json?    @map("process_parameters") // Additional parameters as JSON
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id                Int      @id @default(autoincrement())
+  recipeId          Int      @map("recipe_id")
+  stepNumber        Int      @map("step_number")
+  name              String
+  description       String?
+  equipmentId       Int?     @map("equipment_id")
+  duration          Int? // Duration in minutes
+  temperature       Decimal? @db.Decimal(10, 2)
+  temperatureUnit   String?  @map("temperature_unit") // C, F, K
+  pressure          Decimal? @db.Decimal(10, 2)
+  pressureUnit      String?  @map("pressure_unit") // bar, psi, atm
+  instructions      String?
+  processParameters Json?    @map("process_parameters") // Additional parameters as JSON
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  recipe    Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  equipment Equipment? @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  recipe    Recipe          @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  equipment Equipment?      @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  sdsLinks  RecipeStepSDS[]
 
   @@unique([recipeId, stepNumber])
   @@map("recipe_steps")
 }
 
 model RecipeMaterial {
-  id           Int      @id @default(autoincrement())
-  recipeId     Int      @map("recipe_id")
-  stepNumber   Int?     @map("step_number") // Which step this material is used in
-  materialId   Int      @map("material_id")
-  quantity     Decimal  @db.Decimal(10, 2)
-  unit         String
-  timingNotes  String?  @map("timing_notes") // e.g., "Add slowly over 30min"
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id          Int      @id @default(autoincrement())
+  recipeId    Int      @map("recipe_id")
+  stepNumber  Int?     @map("step_number") // Which step this material is used in
+  materialId  Int      @map("material_id")
+  quantity    Decimal  @db.Decimal(10, 2)
+  unit        String
+  timingNotes String?  @map("timing_notes") // e.g., "Add slowly over 30min"
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
   recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
 
   @@map("recipe_materials")
+}
+
+model SafetyDataSheet {
+  id             Int       @id @default(autoincrement())
+  materialId     Int?      @map("material_id")
+  chemicalName   String    @map("chemical_name")
+  casNumber      String?   @map("cas_number") // CAS Registry Number
+  manufacturer   String?
+  productCode    String?   @map("product_code")
+  version        String    @default("1.0")
+  revisionDate   DateTime  @map("revision_date") @db.Timestamptz
+  expirationDate DateTime? @map("expiration_date") @db.Timestamptz
+  status         SDSStatus @default(current)
+
+  // File information
+  fileName String @map("file_name")
+  filePath String @map("file_path")
+  fileSize Int    @map("file_size") // in bytes
+  mimeType String @default("application/pdf") @map("mime_type")
+
+  // Hazard information
+  hazardClassifications   HazardClassification[] @map("hazard_classifications")
+  signalWord              String?                @map("signal_word") // Danger, Warning
+  hazardStatements        String?                @map("hazard_statements") @db.Text // H-statements
+  precautionaryStatements String?                @map("precautionary_statements") @db.Text // P-statements
+
+  // Safety information
+  ppeRequirements      String? @map("ppe_requirements") @db.Text
+  emergencyProcedures  String? @map("emergency_procedures") @db.Text
+  firstAidMeasures     String? @map("first_aid_measures") @db.Text
+  fireFightingMeasures String? @map("fire_fighting_measures") @db.Text
+  spillHandling        String? @map("spill_handling") @db.Text
+
+  // Storage and handling
+  storageConditions     String? @map("storage_conditions") @db.Text
+  handlingPrecautions   String? @map("handling_precautions") @db.Text
+  incompatibleMaterials String? @map("incompatible_materials") @db.Text
+
+  // Physical and chemical properties
+  physicalState  String?  @map("physical_state") // solid, liquid, gas
+  color          String?
+  odor           String?
+  pH             Decimal? @db.Decimal(4, 2)
+  flashPoint     Decimal? @map("flash_point") @db.Decimal(10, 2)
+  flashPointUnit String?  @map("flash_point_unit") // C, F
+
+  // Metadata
+  uploadedByUserId Int?     @map("uploaded_by_user_id")
+  notes            String?  @db.Text
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  material        Material?       @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  uploadedBy      User?           @relation(fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  recipeStepLinks RecipeStepSDS[]
+
+  @@map("safety_data_sheets")
+}
+
+model RecipeStepSDS {
+  id           Int      @id @default(autoincrement())
+  recipeStepId Int      @map("recipe_step_id")
+  sdsId        Int      @map("sds_id")
+  notes        String?  @db.Text // Notes about why this SDS is relevant to this step
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  recipeStep RecipeStep      @relation(fields: [recipeStepId], references: [id], onDelete: Cascade)
+  sds        SafetyDataSheet @relation(fields: [sdsId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeStepId, sdsId])
+  @@map("recipe_step_sds")
 }

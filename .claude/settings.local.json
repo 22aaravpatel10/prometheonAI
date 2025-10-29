@@ -3,7 +3,13 @@
     "allow": [
       "Bash(docker:*)",
       "Bash(docker-compose:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(docker.exe compose:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFix equipment quick add feature and expand configuration options\n\n- Quick add now opens modal with pre-filled name instead of direct creation, preventing blank screen errors and allowing full configuration before saving\n- Add comprehensive equipment configuration fields: equipment ID, location, status, size/unit, capacity/unit, and material of construction\n- Update backend API schema to validate and accept all new equipment fields\n- Make equipment modal scrollable to accommodate expanded form\n- Add .dockerignore files to optimize Docker build performance\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nUpdate README with equipment management documentation\n\n- Resolve merge conflict and clean up README\n- Add comprehensive Equipment Management section documenting all configuration fields\n- Document quick-add workflow and common equipment types\n- Update API documentation with equipment endpoint details\n- Add Recent Updates section highlighting latest improvements\n- Update database schema documentation with equipment fields\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(npx prisma format:*)",
+      "Bash(docker.exe logs:*)"
     ],
     "deny": []
   }

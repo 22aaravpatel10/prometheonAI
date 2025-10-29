@@ -14,6 +14,7 @@ import notificationRoutes from './routes/notifications';
 import exportRoutes from './routes/export';
 import importRoutes from './routes/import';
 import materialsRoutes from './routes/materials';
+import sdsRoutes from './routes/sds';
 import './services/emailService'; // Initialize email service
 
 dotenv.config();
@@ -54,6 +55,7 @@ app.use('/notifications', notificationRoutes);
 app.use('/export', exportRoutes);
 app.use('/import', importRoutes);
 app.use('/materials', materialsRoutes);
+app.use('/sds', sdsRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
