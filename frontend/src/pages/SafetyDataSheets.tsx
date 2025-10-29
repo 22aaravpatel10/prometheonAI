@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Layout from '../components/Layout';
+import SDSUploadModal from '../components/SDSUploadModal';
 import { useAuth } from '../contexts/AuthContext';
 import {
   PlusIcon,
@@ -335,26 +336,12 @@ const SafetyDataSheets: React.FC = () => {
         </div>
       </div>
 
-      {/* Upload Modal - Placeholder for now */}
-      {isUploadModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsUploadModalOpen(false)}>
-          <div className="modal-content max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Upload SDS</h2>
-              <button
-                onClick={() => setIsUploadModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <span className="sr-only">Close</span>
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <p className="text-gray-600">SDS upload form will be implemented next...</p>
-          </div>
-        </div>
-      )}
+      {/* Upload Modal */}
+      <SDSUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onSuccess={fetchSDS}
+      />
     </Layout>
   );
 };
