@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Batch Processing Assistant
 
 A comprehensive web application for managing batch production schedules and maintenance events in manufacturing environments.
@@ -6,7 +5,12 @@ A comprehensive web application for managing batch production schedules and main
 ## Features
 
 - **Interactive Calendar**: Timeline and monthly views showing batch and maintenance schedules
-- **Equipment Management**: Add and manage production equipment
+- **Comprehensive Equipment Management**: Add and manage production equipment with detailed configuration
+  - Quick-add common equipment with pre-filled defaults
+  - Full equipment profiles with custom IDs, locations, and specifications
+  - Equipment status tracking (Available, In Use, Maintenance, Offline)
+  - Size and capacity tracking with custom units
+  - Material of construction documentation
 - **Role-based Access Control**: Admin, Planner, and Viewer roles with appropriate permissions
 - **Conflict Detection**: Prevents scheduling overlapping events on the same equipment
 - **Actual vs Planned Tracking**: Track actual start/end times against planned schedules
@@ -107,6 +111,54 @@ SMTP_PASS=your-password
 FROM_EMAIL=noreply@yourdomain.com
 ```
 
+## Equipment Management
+
+The application provides comprehensive equipment management capabilities to track and configure production equipment.
+
+### Equipment Configuration Fields
+
+Each piece of equipment can be configured with the following properties:
+
+- **Equipment Name** (Required): Unique identifier for the equipment
+- **Equipment ID**: Custom alphanumeric ID for internal tracking
+- **Location**: Physical location or department where equipment is located
+- **Status**: Current operational status
+  - `Available`: Ready for use
+  - `In Use`: Currently occupied
+  - `Maintenance`: Under maintenance or repair
+  - `Offline`: Not operational
+- **Size**: Equipment size with custom unit (e.g., 500 L, 1000 kg)
+- **Capacity**: Processing capacity with custom unit (e.g., 100 L/h, 50 kg/batch)
+- **Material of Construction**: Construction material (e.g., Stainless Steel 316L, Glass-Lined)
+
+### Quick Add Common Equipment
+
+The system includes a quick-add feature for common equipment types:
+- Reactors (1-3)
+- Filter Dryers (1-2)
+- Distillation Columns (1-2)
+- Crystallizers (1-2)
+- Centrifuges (1-2)
+- Blenders (1-2)
+- Packaging Lines (1-2)
+- Heat Exchangers (1-2)
+- Storage Tanks (1-2)
+
+When using quick-add:
+1. Click on any common equipment type button
+2. Modal opens with the equipment name pre-filled
+3. Optionally configure additional fields (ID, location, size, capacity, etc.)
+4. Click "Create" to save
+
+This workflow prevents errors and allows full configuration before saving, while still providing the convenience of pre-filled defaults.
+
+### Managing Equipment
+
+- **Add Custom Equipment**: Create equipment with custom names and configurations
+- **Edit Equipment**: Update equipment details at any time
+- **Delete Equipment**: Remove equipment (only if not associated with any events)
+- **View Equipment**: See all equipment with event counts and status
+
 ## API Documentation
 
 ### Authentication Endpoints
@@ -114,10 +166,12 @@ FROM_EMAIL=noreply@yourdomain.com
 - `POST /auth/register` - User registration
 
 ### Equipment Endpoints
-- `GET /equipment` - List all equipment
+- `GET /equipment` - List all equipment with configuration details
 - `POST /equipment` - Create equipment (admin/planner)
-- `PUT /equipment/:id` - Update equipment (admin/planner)
-- `DELETE /equipment/:id` - Delete equipment (admin/planner)
+  - Required: `name`
+  - Optional: `equipmentId`, `location`, `status`, `size`, `sizeUnit`, `capacity`, `capacityUnit`, `materialOfConstruction`, `isCustom`
+- `PUT /equipment/:id` - Update equipment configuration (admin/planner)
+- `DELETE /equipment/:id` - Delete equipment (admin/planner, only if no associated events)
 
 ### Batch Events Endpoints
 - `GET /batches` - List batch events
@@ -166,7 +220,10 @@ FROM_EMAIL=noreply@yourdomain.com
 The application uses a normalized PostgreSQL schema with the following main entities:
 
 - **Users**: System users with role-based permissions
-- **Equipment**: Production equipment/assets
+- **Equipment**: Production equipment/assets with detailed configuration
+  - Core fields: name, equipmentId, location, status
+  - Technical specs: size, sizeUnit, capacity, capacityUnit, materialOfConstruction
+  - Metadata: isCustom, createdByUserId, timestamps
 - **BatchEvents**: Scheduled batch production runs
 - **MaintenanceEvents**: Equipment maintenance activities
 - **Notifications**: Email notification tracking
@@ -356,6 +413,15 @@ For support and questions:
 - Check the documentation in the `/docs` folder
 - Review the API documentation
 
+## Recent Updates
+
+### Equipment Management Enhancements (Latest)
+- **Enhanced Equipment Configuration**: Equipment can now be configured with comprehensive details including equipment ID, location, status, size/capacity with units, and material of construction
+- **Improved Quick Add Workflow**: Quick-add buttons now open a modal with pre-filled equipment name, allowing users to configure all fields before saving (prevents blank screen errors and allows full control)
+- **Scrollable Equipment Modal**: Modal now supports scrolling to accommodate all configuration fields
+- **Backend API Expansion**: Updated validation schema to accept all new equipment configuration fields
+- **Docker Build Optimization**: Added .dockerignore files to improve build performance
+
 ## Roadmap
 
 - [ ] Advanced reporting and analytics
@@ -364,6 +430,3 @@ For support and questions:
 - [ ] Advanced workflow automation
 - [ ] Multi-tenant architecture
 - [ ] Real-time notifications via WebSocket
-=======
-# batchscheduler
->>>>>>> 9e7bcbfcbf6e4b87336d926444d5815e23a68193
