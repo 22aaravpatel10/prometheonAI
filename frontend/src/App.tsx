@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Equipment from './pages/Equipment';
 import Users from './pages/Users';
 import Inventory from './pages/Inventory';
+import SafetyDataSheets from './pages/SafetyDataSheets';
 import './App.css';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/equipment" element={<Equipment />} />
             <Route path="/inventory" element={<Inventory />} />
+            <Route path="/sds" element={<SafetyDataSheets />} />
             <Route path="/users" element={<Users />} />
           </Routes>
         </div>

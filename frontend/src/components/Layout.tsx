@@ -8,7 +8,8 @@ import {
   UsersIcon,
   ArrowRightOnRectangleIcon,
   ChartBarIcon,
-  CubeIcon
+  CubeIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
 interface LayoutProps {
@@ -29,6 +30,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Dashboard', href: '/', icon: HomeIcon },
     { name: 'Equipment', href: '/equipment', icon: CogIcon },
     { name: 'Inventory', href: '/inventory', icon: CubeIcon },
+    { name: 'Safety Data Sheets', href: '/sds', icon: DocumentTextIcon },
     ...(user?.role === 'admin' ? [{ name: 'Users', href: '/users', icon: UsersIcon }] : [])
   ];
 
