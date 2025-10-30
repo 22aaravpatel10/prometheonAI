@@ -10,8 +10,7 @@ import {
   ExclamationTriangleIcon,
   MagnifyingGlassIcon,
   ArrowDownTrayIcon,
-  TrashIcon,
-  PencilIcon
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
 interface SDS {
@@ -49,6 +48,7 @@ const SafetyDataSheets: React.FC = () => {
 
   useEffect(() => {
     fetchSDS();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
   const fetchSDS = async () => {
