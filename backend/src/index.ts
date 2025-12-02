@@ -15,6 +15,9 @@ import exportRoutes from './routes/export';
 import importRoutes from './routes/import';
 import materialsRoutes from './routes/materials';
 import sdsRoutes from './routes/sds';
+import copilotRoutes from './routes/copilot';
+import uploadPlanRoutes from './routes/upload-plan';
+import recipeRoutes from './routes/recipes';
 import './services/emailService'; // Initialize email service
 
 dotenv.config();
@@ -56,11 +59,14 @@ app.use('/export', exportRoutes);
 app.use('/import', importRoutes);
 app.use('/materials', materialsRoutes);
 app.use('/sds', sdsRoutes);
+app.use('/recipes', recipeRoutes);
+app.use('/api/copilot', copilotRoutes);
+app.use('/api/upload-plan', uploadPlanRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Something went wrong!',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });

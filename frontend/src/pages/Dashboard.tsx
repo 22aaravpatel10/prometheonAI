@@ -1,415 +1,285 @@
 import React, { useState, useEffect } from 'react';
-import FullCalendar from '@fullcalendar/react';
-import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import axios from 'axios';
-import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
+import {
+  Activity,
+  AlertTriangle,
+  Box,
+  CheckCircle,
+  Clock,
+  Cpu,
+  Database,
+  DollarSign,
+  Droplet,
+  Factory,
+  Gauge,
+  Layers,
+  Zap,
+  TrendingUp,
+  TrendingDown,
+  Wind,
+  Thermometer,
+  BarChart3
+} from 'lucide-react';
 import Layout from '../components/Layout';
-import EventModal from '../components/EventModal';
-import ExportButtons from '../components/ExportButtons';
-import { useAuth } from '../contexts/AuthContext';
-
-interface Equipment {
-  id: number;
-  name: string;
-}
-
-interface BatchEvent {
-  id: number;
-  equipmentId: number;
-  batchNo: string;
-  productName: string;
-  batchSize?: number;
-  startTimestamp: string;
-  endTimestamp: string;
-  actualStart?: string;
-  actualEnd?: string;
-  inputs?: any;
-  equipment: Equipment;
-}
-
-interface MaintenanceEvent {
-  id: number;
-  equipmentId: number;
-  reason: string;
-  supervisorName?: string;
-  startTimestamp: string;
-  endTimestamp: string;
-  actualStart?: string;
-  actualEnd?: string;
-  equipment: Equipment;
-}
+import ManufacturingCopilotPanel from '../components/ManufacturingCopilotPanel';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
-  const [batchEvents, setBatchEvents] = useState<BatchEvent[]>([]);
-  const [maintenanceEvents, setMaintenanceEvents] = useState<MaintenanceEvent[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [calendarView, setCalendarView] = useState('resourceTimelineWeek');
-  const [showActualTimes, setShowActualTimes] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [equipmentRes, batchRes, maintenanceRes] = await Promise.all([
-        axios.get('/equipment'),
-        axios.get('/batches'),
-        axios.get('/maintenance')
-      ]);
-
-      setEquipment(equipmentRes.data);
-      setBatchEvents(batchRes.data);
-      setMaintenanceEvents(maintenanceRes.data);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Failed to load data');
-    } finally {
-      setLoading(false);
+  // Mock Data
+  const metrics = {
+    operations: {
+      throughput: "1,240 kg/h",
+      efficiency: "94.2%",
+      activeBatches: 3,
+      bottleneck: "Reactor 2 (Cooling)"
+    },
+    maintenance: {
+      healthScore: "88/100",
+      upcomingPMs: 2,
+      criticalAlerts: 0,
+      riskForecast: "Low"
+    },
+    energy: {
+      steam: "4.2 ton/h",
+      cooling: "1,200 m³/h",
+      nitrogen: "120 Nm³/h",
+      cost: "$420/h"
+    },
+    inventory: {
+      critical: 1,
+      stockouts: 0,
+      deliveries: "2 Pending",
+      allocation: "Optimized"
+    },
+    economics: {
+      yieldLoss: "1.2%",
+      costPerBatch: "$12,450",
+      oee: "87.5%",
+      output: "On Target"
     }
   };
-
-  const handleEventClick = (clickInfo: any) => {
-    const event = clickInfo.event;
-    const eventData = event.extendedProps;
-    
-    setSelectedEvent({
-      id: event.id,
-      title: event.title,
-      start: event.start,
-      end: event.end,
-      type: eventData.type,
-      ...eventData
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleDateSelect = (selectInfo: any) => {
-    if (user?.role === 'viewer') {
-      toast.error('You do not have permission to create events');
-      return;
-    }
-
-    const resourceId = selectInfo.resource?.id;
-    const equipmentItem = equipment.find(eq => eq.id.toString() === resourceId);
-
-    if (!equipmentItem) {
-      toast.error('Please select a valid equipment');
-      return;
-    }
-
-    setSelectedEvent({
-      start: selectInfo.start,
-      end: selectInfo.end,
-      equipmentId: equipmentItem.id,
-      equipment: equipmentItem,
-      type: 'batch', // Default to batch event
-      isNew: true
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleEventUpdate = async (updatedEvent: any) => {
-    try {
-      if (updatedEvent.isNew) {
-        // Create new event
-        if (updatedEvent.type === 'batch') {
-          const response = await axios.post('/batches', {
-            equipmentId: updatedEvent.equipmentId,
-            batchNo: updatedEvent.batchNo,
-            productName: updatedEvent.productName,
-            batchSize: updatedEvent.batchSize,
-            startTimestamp: updatedEvent.start,
-            endTimestamp: updatedEvent.end,
-            inputs: updatedEvent.inputs
-          });
-          setBatchEvents(prev => [...prev, response.data]);
-        } else {
-          const response = await axios.post('/maintenance', {
-            equipmentId: updatedEvent.equipmentId,
-            reason: updatedEvent.reason,
-            supervisorName: updatedEvent.supervisorName,
-            expectedDuration: updatedEvent.expectedDuration,
-            startTimestamp: updatedEvent.start,
-            endTimestamp: updatedEvent.end,
-            spareParts: updatedEvent.spareParts,
-            changesMade: updatedEvent.changesMade
-          });
-          setMaintenanceEvents(prev => [...prev, response.data]);
-        }
-        toast.success('Event created successfully');
-      } else {
-        // Update existing event
-        if (updatedEvent.type === 'batch') {
-          const response = await axios.put(`/batches/${updatedEvent.id}`, {
-            equipmentId: updatedEvent.equipmentId,
-            batchNo: updatedEvent.batchNo,
-            productName: updatedEvent.productName,
-            batchSize: updatedEvent.batchSize,
-            startTimestamp: updatedEvent.start,
-            endTimestamp: updatedEvent.end,
-            actualStart: updatedEvent.actualStart,
-            actualEnd: updatedEvent.actualEnd,
-            inputs: updatedEvent.inputs
-          });
-          setBatchEvents(prev => prev.map(event => 
-            event.id === updatedEvent.id ? response.data : event
-          ));
-        } else {
-          const response = await axios.put(`/maintenance/${updatedEvent.id}`, {
-            equipmentId: updatedEvent.equipmentId,
-            reason: updatedEvent.reason,
-            supervisorName: updatedEvent.supervisorName,
-            expectedDuration: updatedEvent.expectedDuration,
-            startTimestamp: updatedEvent.start,
-            endTimestamp: updatedEvent.end,
-            actualStart: updatedEvent.actualStart,
-            actualEnd: updatedEvent.actualEnd,
-            spareParts: updatedEvent.spareParts,
-            changesMade: updatedEvent.changesMade
-          });
-          setMaintenanceEvents(prev => prev.map(event => 
-            event.id === updatedEvent.id ? response.data : event
-          ));
-        }
-        toast.success('Event updated successfully');
-      }
-      
-      setIsModalOpen(false);
-      setSelectedEvent(null);
-    } catch (error: any) {
-      console.error('Error saving event:', error);
-      const message = error.response?.data?.error || 'Failed to save event';
-      toast.error(message);
-    }
-  };
-
-  const handleEventDelete = async (eventId: number, eventType: string) => {
-    try {
-      if (eventType === 'batch') {
-        await axios.delete(`/batches/${eventId}`);
-        setBatchEvents(prev => prev.filter(event => event.id !== eventId));
-      } else {
-        await axios.delete(`/maintenance/${eventId}`);
-        setMaintenanceEvents(prev => prev.filter(event => event.id !== eventId));
-      }
-      toast.success('Event deleted successfully');
-      setIsModalOpen(false);
-      setSelectedEvent(null);
-    } catch (error) {
-      console.error('Error deleting event:', error);
-      toast.error('Failed to delete event');
-    }
-  };
-
-  // Prepare calendar events
-  const calendarEvents = [
-    // Batch events
-    ...batchEvents.map(event => ({
-      id: `batch-${event.id}`,
-      title: `${event.batchNo} - ${event.productName}`,
-      start: event.startTimestamp,
-      end: event.endTimestamp,
-      resourceId: event.equipmentId.toString(),
-      className: 'fc-event-batch',
-      extendedProps: {
-        type: 'batch',
-        ...event
-      }
-    })),
-    // Maintenance events
-    ...maintenanceEvents.map(event => ({
-      id: `maintenance-${event.id}`,
-      title: `Maintenance - ${event.reason}`,
-      start: event.startTimestamp,
-      end: event.endTimestamp,
-      resourceId: event.equipmentId.toString(),
-      className: 'fc-event-maintenance',
-      extendedProps: {
-        type: 'maintenance',
-        ...event
-      }
-    })),
-    // Actual times overlay (if enabled)
-    ...(showActualTimes ? [
-      ...batchEvents.filter(e => e.actualStart && e.actualEnd).map(event => ({
-        id: `batch-actual-${event.id}`,
-        title: `${event.batchNo} (Actual)`,
-        start: event.actualStart!,
-        end: event.actualEnd!,
-        resourceId: event.equipmentId.toString(),
-        className: 'fc-event-batch fc-event-actual',
-        extendedProps: {
-          type: 'batch',
-          isActual: true,
-          ...event
-        }
-      })),
-      ...maintenanceEvents.filter(e => e.actualStart && e.actualEnd).map(event => ({
-        id: `maintenance-actual-${event.id}`,
-        title: `Maintenance (Actual)`,
-        start: event.actualStart!,
-        end: event.actualEnd!,
-        resourceId: event.equipmentId.toString(),
-        className: 'fc-event-maintenance fc-event-actual',
-        extendedProps: {
-          type: 'maintenance',
-          isActual: true,
-          ...event
-        }
-      }))
-    ] : [])
-  ];
-
-  // Prepare resources for timeline view
-  const resources = equipment.map(eq => ({
-    id: eq.id.toString(),
-    title: eq.name
-  }));
-
-  if (loading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-        </div>
-      </Layout>
-    );
-  }
 
   return (
     <Layout>
-      <div className="px-4 sm:px-0">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Manage batch and maintenance schedules
-          </p>
-        </div>
+      <div className="p-6 flex flex-col min-h-full">
 
-        {/* Controls */}
-        <div className="mb-6 flex flex-wrap gap-4 items-center">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCalendarView('resourceTimelineWeek')}
-              className={`px-3 py-2 text-sm rounded-md ${
-                calendarView === 'resourceTimelineWeek'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Timeline Week
-            </button>
-            <button
-              onClick={() => setCalendarView('resourceTimelineDay')}
-              className={`px-3 py-2 text-sm rounded-md ${
-                calendarView === 'resourceTimelineDay'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Timeline Day
-            </button>
-            <button
-              onClick={() => setCalendarView('dayGridMonth')}
-              className={`px-3 py-2 text-sm rounded-md ${
-                calendarView === 'dayGridMonth'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Month
-            </button>
+        {/* Header Section */}
+        <div className="flex justify-between items-end mb-6 shrink-0">
+          <div>
+            <h1 className="text-3xl font-bold text-white font-tech tracking-wider">
+              COMMAND <span className="text-[#007A73]">CENTER</span>
+            </h1>
+            <p className="text-gray-500 text-xs font-mono tracking-[0.2em] mt-1">
+              REAL-TIME PLANT TELEMETRY & AI ORCHESTRATION
+            </p>
           </div>
-
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={showActualTimes}
-              onChange={(e) => setShowActualTimes(e.target.checked)}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm text-gray-700">Show Actual Times</span>
-          </label>
-
-          <button
-            onClick={fetchData}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-          >
-            Refresh
-          </button>
-
-          <ExportButtons />
-        </div>
-
-        {/* Calendar */}
-        <div className="bg-white rounded-lg shadow">
-          <FullCalendar
-            plugins={[resourceTimelinePlugin, dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView={calendarView}
-            headerToolbar={{
-              left: 'prev,next today',
-              center: 'title',
-              right: ''
-            }}
-            events={calendarEvents}
-            resources={calendarView.includes('Timeline') ? resources : undefined}
-            resourceAreaHeaderContent="Equipment"
-            selectable={user?.role !== 'viewer'}
-            selectMirror={true}
-            eventClick={handleEventClick}
-            select={handleDateSelect}
-            height="auto"
-            slotMinTime="06:00:00"
-            slotMaxTime="22:00:00"
-            slotDuration="01:00:00"
-            eventDisplay="block"
-          />
-        </div>
-
-        {/* Legend */}
-        <div className="mt-4 flex gap-6 text-sm">
-          <div className="flex items-center">
-            <div className="w-4 h-4 bg-blue-600 rounded mr-2"></div>
-            <span>Batch Events</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-4 h-4 bg-red-600 rounded mr-2"></div>
-            <span>Maintenance Events</span>
-          </div>
-          {showActualTimes && (
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-gray-600 border-2 border-gray-800 rounded mr-2"></div>
-              <span>Actual Times</span>
+          <div className="flex gap-4">
+            <div className="px-4 py-2 bg-[#0a0a0a] border border-white/10 rounded-sm flex items-center gap-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-mono text-gray-400">SYSTEM STATUS: <span className="text-white font-bold">NOMINAL</span></span>
             </div>
-          )}
+            <div className="px-4 py-2 bg-[#0a0a0a] border border-white/10 rounded-sm flex items-center gap-3">
+              <Clock size={14} className="text-[#007A73]" />
+              <span className="text-xs font-mono text-gray-400">SHIFT: <span className="text-white font-bold">A-TEAM</span></span>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-12 gap-4">
+
+          {/* CENTERPIECE: PrometheonAI Panel */}
+          {/* On large screens, this is in the middle. On small, it stacks. */}
+          <div className="col-span-12 lg:col-span-6 lg:col-start-4 lg:row-start-1 relative group h-[600px] lg:h-auto min-h-[500px]">
+            <div className="absolute -inset-0.5 bg-gradient-to-b from-[#007A73] to-transparent opacity-20 blur-sm rounded-sm group-hover:opacity-30 transition duration-1000"></div>
+            <div className="relative h-full bg-[#0a0a0a] border border-[#007A73]/30 rounded-sm overflow-hidden flex flex-col shadow-[0_0_50px_-20px_rgba(0,122,115,0.3)]">
+              {/* Decorative Corners */}
+              <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-[#007A73]"></div>
+              <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-[#007A73]"></div>
+              <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-[#007A73]"></div>
+              <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-[#007A73]"></div>
+
+              <ManufacturingCopilotPanel
+                isOpen={true}
+                onClose={() => { }}
+                embedded={true}
+              />
+            </div>
+          </div>
+
+          {/* LEFT COLUMN: Operations & Maintenance */}
+          <div className="col-span-12 lg:col-span-3 lg:row-start-1 flex flex-col gap-4">
+
+            {/* Operations Status */}
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="bg-[#0a0a0a]/80 backdrop-blur-sm border border-white/10 rounded-sm p-4 flex flex-col relative overflow-hidden group hover:border-[#007A73]/50 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-4 text-[#007A73]">
+                <Activity size={18} />
+                <h3 className="font-tech font-bold tracking-wider text-sm">OPERATIONS</h3>
+              </div>
+
+              <div className="space-y-4 flex-1">
+                <MetricRow label="Throughput" value={metrics.operations.throughput} icon={Factory} />
+                <MetricRow label="Efficiency" value={metrics.operations.efficiency} icon={Gauge} trend="up" />
+                <MetricRow label="Active Batches" value={metrics.operations.activeBatches.toString()} icon={Layers} />
+
+                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-sm">
+                  <div className="flex items-center gap-2 text-red-400 mb-1">
+                    <AlertTriangle size={14} />
+                    <span className="text-[10px] font-bold tracking-wider">BOTTLENECK DETECTED</span>
+                  </div>
+                  <p className="text-xs text-gray-300">{metrics.operations.bottleneck}</p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Maintenance & Reliability */}
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-[#0a0a0a]/80 backdrop-blur-sm border border-white/10 rounded-sm p-4 flex flex-col relative overflow-hidden group hover:border-[#007A73]/50 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-4 text-[#007A73]">
+                <Cpu size={18} />
+                <h3 className="font-tech font-bold tracking-wider text-sm">MAINTENANCE</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400 font-mono">HEALTH SCORE</span>
+                  <span className="text-xl font-bold text-white font-tech">{metrics.maintenance.healthScore}</span>
+                </div>
+                <div className="w-full bg-gray-800 h-1 rounded-full overflow-hidden">
+                  <div className="bg-green-500 w-[88%] h-full"></div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div className="p-2 bg-white/5 rounded-sm border border-white/5">
+                    <span className="text-[10px] text-gray-500 block">UPCOMING PMs</span>
+                    <span className="text-lg font-bold text-white">{metrics.maintenance.upcomingPMs}</span>
+                  </div>
+                  <div className="p-2 bg-white/5 rounded-sm border border-white/5">
+                    <span className="text-[10px] text-gray-500 block">RISK LEVEL</span>
+                    <span className="text-lg font-bold text-green-400">{metrics.maintenance.riskForecast}</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+          </div>
+
+          {/* RIGHT COLUMN: Energy & Inventory */}
+          <div className="col-span-12 lg:col-span-3 lg:col-start-10 lg:row-start-1 flex flex-col gap-4">
+
+            {/* Energy & Utilities */}
+            <motion.div
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="bg-[#0a0a0a]/80 backdrop-blur-sm border border-white/10 rounded-sm p-4 flex flex-col relative overflow-hidden group hover:border-[#007A73]/50 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-4 text-[#007A73]">
+                <Zap size={18} />
+                <h3 className="font-tech font-bold tracking-wider text-sm">ENERGY</h3>
+              </div>
+
+              <div className="space-y-4">
+                <MetricRow label="Steam Flow" value={metrics.energy.steam} icon={Wind} />
+                <MetricRow label="Cooling Water" value={metrics.energy.cooling} icon={Droplet} />
+                <MetricRow label="Nitrogen" value={metrics.energy.nitrogen} icon={Thermometer} />
+                <MetricRow label="Hourly Cost" value={metrics.energy.cost} icon={DollarSign} />
+              </div>
+            </motion.div>
+
+            {/* Raw Materials */}
+            <motion.div
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-[#0a0a0a]/80 backdrop-blur-sm border border-white/10 rounded-sm p-4 flex flex-col relative overflow-hidden group hover:border-[#007A73]/50 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-4 text-[#007A73]">
+                <Box size={18} />
+                <h3 className="font-tech font-bold tracking-wider text-sm">INVENTORY</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-sm">
+                  <span className="text-xs text-yellow-500">CRITICAL LEVELS</span>
+                  <span className="text-sm font-bold text-white">{metrics.inventory.critical} Items</span>
+                </div>
+
+                <MetricRow label="Stockouts" value={metrics.inventory.stockouts.toString()} icon={AlertTriangle} />
+                <MetricRow label="Deliveries" value={metrics.inventory.deliveries} icon={Database} />
+              </div>
+            </motion.div>
+
+          </div>
+
+          {/* BOTTOM CENTER: Economic Snapshot */}
+          <div className="col-span-12 lg:col-span-6 lg:col-start-4">
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="bg-[#0a0a0a]/80 backdrop-blur-sm border border-white/10 rounded-sm p-4 relative overflow-hidden group hover:border-[#007A73]/50 transition-colors"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-[#007A73]">
+                  <BarChart3 size={18} />
+                  <h3 className="font-tech font-bold tracking-wider text-sm">ECONOMIC SNAPSHOT</h3>
+                </div>
+                <div className="text-xs font-mono text-gray-500">LAST 24H</div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <EconomicCard label="YIELD LOSS" value={metrics.economics.yieldLoss} trend="down" good={true} />
+                <EconomicCard label="COST / BATCH" value={metrics.economics.costPerBatch} />
+                <EconomicCard label="OEE" value={metrics.economics.oee} trend="up" good={true} />
+                <EconomicCard label="OUTPUT" value={metrics.economics.output} />
+              </div>
+            </motion.div>
+          </div>
+
         </div>
       </div>
-
-      {/* Event Modal */}
-      {isModalOpen && selectedEvent && (
-        <EventModal
-          event={selectedEvent}
-          equipment={equipment}
-          onSave={handleEventUpdate}
-          onDelete={handleEventDelete}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedEvent(null);
-          }}
-          canEdit={user?.role !== 'viewer'}
-        />
-      )}
     </Layout>
   );
 };
+
+// Helper Components
+const MetricRow = ({ label, value, icon: Icon, trend }: any) => (
+  <div className="flex items-center justify-between group/row">
+    <div className="flex items-center gap-3">
+      <div className="p-1.5 bg-white/5 rounded-sm text-gray-400 group-hover/row:text-white transition-colors">
+        <Icon size={14} />
+      </div>
+      <span className="text-xs text-gray-400 font-mono group-hover/row:text-gray-300 transition-colors">{label}</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <span className="text-sm font-bold text-white font-tech tracking-wide">{value}</span>
+      {trend === 'up' && <TrendingUp size={12} className="text-green-500" />}
+      {trend === 'down' && <TrendingDown size={12} className="text-red-500" />}
+    </div>
+  </div>
+);
+
+const EconomicCard = ({ label, value, trend, good }: any) => (
+  <div className="p-3 bg-white/5 rounded-sm border border-white/5 hover:bg-white/10 transition-colors">
+    <p className="text-[10px] text-gray-500 font-mono mb-1">{label}</p>
+    <div className="flex items-end gap-2">
+      <span className="text-lg font-bold text-white font-tech">{value}</span>
+      {trend && (
+        <span className={good ? "text-green-500" : "text-red-500"}>
+          {good ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+        </span>
+      )}
+    </div>
+  </div>
+);
 
 export default Dashboard;

@@ -159,6 +159,25 @@ This workflow prevents errors and allows full configuration before saving, while
 - **Delete Equipment**: Remove equipment (only if not associated with any events)
 - **View Equipment**: See all equipment with event counts and status
 
+## Inventory Management
+
+The system provides robust inventory tracking with advanced safety features:
+
+### Material Tracking
+- **CAS Number Integration**: Track materials by their Chemical Abstracts Service (CAS) Registry Number.
+- **Safety Tags**: Assign GHS Hazard Classes to materials for safety compliance.
+- **AI-Powered Lookup**: Automatically fetch GHS Hazard Classes using PrometheonAI and PubChem.
+  - Enter a CAS Number.
+  - Click "AUTO-FILL" to retrieve official hazard statements from PubChem.
+  - AI maps these statements to standard GHS categories.
+- **Stock Management**: Track current quantity, minimum stock levels, and unit costs.
+- **Transaction History**: Record all inventory movements (received, consumed, adjusted).
+
+### Safety Features
+- **Visual Indicators**: Safety tags are displayed in the inventory table.
+- **Categorized Hazards**: Hazards are grouped by Physical, Health, and Environmental categories.
+- **Automated Data**: Reduces manual entry errors by sourcing safety data from authoritative databases.
+
 ## API Documentation
 
 ### Authentication Endpoints
@@ -421,6 +440,16 @@ For support and questions:
 - **Scrollable Equipment Modal**: Modal now supports scrolling to accommodate all configuration fields
 - **Backend API Expansion**: Updated validation schema to accept all new equipment configuration fields
 - **Docker Build Optimization**: Added .dockerignore files to improve build performance
+
+### Inventory Enhancements (Latest)
+- **CAS & Safety Tags**: Added support for CAS Numbers and GHS Hazard Classes.
+- **AI/PubChem Integration**: Implemented smart lookup for safety data using PubChem API and OpenAI.
+- **Enhanced UI**: Updated Inventory interface with "Mission Control" aesthetic and improved forms.
+
+### AI Recipe Analysis (Latest)
+- **Deep Chemical Context**: Automatically researches and stores detailed chemical engineering data for recipe steps (Thermodynamics, Kinetics, Safety).
+- **AI Knowledge Base**: New modal in Progress tracking to view AI-generated insights for each process step.
+- **Simulated Research**: Leverages LLM knowledge to provide instant analysis of chemical reactions.
 
 ## Roadmap
 
