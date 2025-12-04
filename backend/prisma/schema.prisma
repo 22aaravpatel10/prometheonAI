@@ -239,6 +239,7 @@ model Material {
   batchMaterials   BatchMaterial[]
   transactions     InventoryTransaction[]
   recipeMaterials  RecipeMaterial[]
+  ingredients      RecipeIngredient[]
   safetyDataSheets SafetyDataSheet[]
 
   @@map("materials")
@@ -273,6 +274,12 @@ model Recipe {
   totalTime        Int?         @map("total_time") // Total estimated time in minutes
   status           RecipeStatus @default(draft)
   description      String?
+  
+  // New Fields for Ontology
+  totalYield       Decimal?     @map("total_yield") @db.Decimal(10, 2)
+  contextData      Json?        @map("context_data") // Stores extracted qualitative context
+  sourceFile       String?      @map("source_file")  // Link to original PDF path
+
   createdByUserId  Int?         @map("created_by_user_id")
   approvedByUserId Int?         @map("approved_by_user_id")
   approvedAt       DateTime?    @map("approved_at") @db.Timestamptz
@@ -283,10 +290,39 @@ model Recipe {
   createdBy  User?            @relation("RecipeCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   approvedBy User?            @relation("RecipeApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
   steps      RecipeStep[]
-  materials  RecipeMaterial[]
+  materials  RecipeMaterial[] // Keeping for backward compatibility or migration, but RecipeIngredient is the new standard
+  ingredients RecipeIngredient[]
+  outputs     RecipeOutput[]
   batches    BatchEvent[]
 
   @@map("recipes")
+}
+
+model RecipeIngredient {
+  id          Int      @id @default(autoincrement())
+  recipeId    Int      @map("recipe_id")
+  materialId  Int      @map("material_id")
+  quantity    Decimal  @db.Decimal(10, 2)
+  unit        String
+  stepNumber  Int?     @map("step_number")
+  
+  recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@map("recipe_ingredients")
+}
+
+model RecipeOutput {
+  id          Int      @id @default(autoincrement())
+  recipeId    Int      @map("recipe_id")
+  name        String
+  type        String   // 'product', 'waste', 'byproduct'
+  targetTank  String?  @map("target_tank")
+  amount      Decimal? @db.Decimal(10, 2)
+  
+  recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@map("recipe_outputs")
 }
 
 model RecipeStep {

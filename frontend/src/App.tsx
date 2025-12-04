@@ -7,6 +7,7 @@ import Equipment from './pages/Equipment';
 import Progress from './pages/Progress';
 import Users from './pages/Users';
 import Inventory from './pages/Inventory';
+import RecipeLibrary from './pages/RecipeLibrary';
 import './App.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
           <Toaster position="top-right" />
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/recipes" element={<RecipeLibrary />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/equipment" element={<Equipment />} />
             <Route path="/inventory" element={<Inventory />} />

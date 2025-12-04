@@ -15,7 +15,8 @@ import {
   Zap,
   ChevronRight,
   Globe,
-  Cpu
+  Cpu,
+  FileText
 } from 'lucide-react';
 import ManufacturingCopilotPanel from './ManufacturingCopilotPanel';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -39,6 +40,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Recipes', href: '/recipes', icon: FileText },
     { name: 'Equipment', href: '/equipment', icon: Database },
     { name: 'Inventory', href: '/inventory', icon: Box },
     { name: 'Progress', href: '/progress', icon: Activity },

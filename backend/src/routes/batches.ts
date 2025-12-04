@@ -20,11 +20,11 @@ const batchEventSchema = Joi.object({
   if (new Date(value.endTimestamp) <= new Date(value.startTimestamp)) {
     return helpers.error('any.invalid', { message: 'End time must be after start time' });
   }
-  
+
   if (value.actualStart && value.actualEnd && new Date(value.actualEnd) <= new Date(value.actualStart)) {
     return helpers.error('any.invalid', { message: 'Actual end time must be after actual start time' });
   }
-  
+
   return value;
 });
 
@@ -67,13 +67,13 @@ const checkEquipmentConflict = async (equipmentId: number, startTime: Date, endT
 router.get('/', authenticateToken, requireReadAccess, async (req: AuthRequest, res) => {
   try {
     const { equipmentId, startDate, endDate } = req.query;
-    
+
     const where: any = {};
-    
+
     if (equipmentId) {
       where.equipmentId = parseInt(equipmentId as string);
     }
-    
+
     if (startDate || endDate) {
       where.OR = [
         {
@@ -110,7 +110,7 @@ router.get('/', authenticateToken, requireReadAccess, async (req: AuthRequest, r
 router.get('/:id', authenticateToken, requireReadAccess, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    
+
     const batchEvent = await prisma.batchEvent.findUnique({
       where: { id },
       include: {
@@ -179,7 +179,7 @@ router.put('/:id', authenticateToken, requireWriteAccess, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { error, value } = batchEventSchema.validate(req.body);
-    
+
     if (error) {
       return res.status(400).json({ error: error.details[0].message });
     }
@@ -242,6 +242,33 @@ router.delete('/:id', authenticateToken, requireWriteAccess, async (req, res) =>
     }
     console.error('Error deleting batch event:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+import { schedulingService } from '../services/schedulingService';
+
+// ... existing imports ...
+
+// Schedule a batch from a recipe
+router.post('/schedule', authenticateToken, requireWriteAccess, async (req, res) => {
+  try {
+    const { recipeId, equipmentId, startTime, batchSize } = req.body;
+
+    if (!recipeId || !equipmentId || !startTime || !batchSize) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const batch = await schedulingService.scheduleBatchFromRecipe(
+      Number(recipeId),
+      Number(equipmentId),
+      new Date(startTime),
+      Number(batchSize)
+    );
+
+    res.status(201).json(batch);
+  } catch (error: any) {
+    console.error('Error scheduling batch:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
 

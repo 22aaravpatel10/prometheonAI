@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import Layout from '../components/Layout';
 import EventModal from '../components/EventModal';
 import ExportButtons from '../components/ExportButtons';
+import ScheduleRecipeModal from '../components/ScheduleRecipeModal';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Equipment {
@@ -49,6 +50,7 @@ const Progress: React.FC = () => {
     const [maintenanceEvents, setMaintenanceEvents] = useState<MaintenanceEvent[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [calendarView, setCalendarView] = useState('resourceTimelineDay'); // Default to Day view as requested
     const [showActualTimes, setShowActualTimes] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
@@ -356,6 +358,13 @@ const Progress: React.FC = () => {
                     </label>
 
                     <button
+                        onClick={() => setIsScheduleModalOpen(true)}
+                        className="px-6 py-2 bg-blue-600 text-white text-xs font-bold tracking-widest font-tech rounded-sm hover:bg-blue-500 transition-all duration-300 shadow-lg shadow-blue-900/20"
+                    >
+                        SCHEDULE BATCH
+                    </button>
+
+                    <button
                         onClick={() => fetchData(false)}
                         className="px-6 py-2 bg-white/10 text-white border border-white/50 text-xs font-bold tracking-widest font-tech rounded-sm hover:bg-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.4)] transition-all duration-300"
                     >
@@ -427,6 +436,14 @@ const Progress: React.FC = () => {
                     canEdit={user?.role !== 'viewer'}
                 />
             )}
+
+            {/* Schedule Recipe Modal */}
+            <ScheduleRecipeModal
+                isOpen={isScheduleModalOpen}
+                onClose={() => setIsScheduleModalOpen(false)}
+                onSuccess={() => fetchData(false)}
+                equipmentList={equipment}
+            />
         </Layout>
     );
 };
