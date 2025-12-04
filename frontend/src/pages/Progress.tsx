@@ -49,16 +49,19 @@ const Progress: React.FC = () => {
     const [maintenanceEvents, setMaintenanceEvents] = useState<MaintenanceEvent[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [calendarView, setCalendarView] = useState('resourceTimelineWeek');
+    const [calendarView, setCalendarView] = useState('resourceTimelineDay'); // Default to Day view as requested
     const [showActualTimes, setShowActualTimes] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
-        fetchData();
+        fetchData(true);
     }, []);
 
-    const fetchData = async () => {
-        setLoading(true);
+    const fetchData = async (isInitial = false) => {
+        if (isInitial) setInitialLoading(true);
+        else setIsRefreshing(true);
+
         try {
             const [equipmentRes, batchRes, maintenanceRes] = await Promise.all([
                 axios.get('/equipment'),
@@ -73,8 +76,14 @@ const Progress: React.FC = () => {
             console.error('Error fetching data:', error);
             toast.error('Failed to load data');
         } finally {
-            setLoading(false);
+            setInitialLoading(false);
+            setIsRefreshing(false);
         }
+    };
+
+    const handleDatesSet = () => {
+        // Auto-refresh data when view or date range changes
+        fetchData(false);
     };
 
     const handleEventClick = (clickInfo: any) => {
@@ -275,7 +284,7 @@ const Progress: React.FC = () => {
         title: eq.name
     }));
 
-    if (loading) {
+    if (initialLoading) {
         return (
             <Layout>
                 <div className="flex items-center justify-center h-64">
@@ -288,13 +297,20 @@ const Progress: React.FC = () => {
     return (
         <Layout>
             <div className="px-4 sm:px-6 lg:px-8 py-6">
-                <div className="mb-8 animate-fade-in-up">
-                    <h1 className="text-3xl font-bold text-white font-tech tracking-wider">
-                        PROGRESS <span className="text-[#007A73]">TRACKING</span>
-                    </h1>
-                    <p className="text-gray-500 text-xs font-mono tracking-[0.2em] mt-1">
-                        BATCH SCHEDULE AND TIMELINE
-                    </p>
+                <div className="mb-8 animate-fade-in-up flex justify-between items-end">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white font-tech tracking-wider">
+                            PROGRESS <span className="text-[#007A73]">TRACKING</span>
+                        </h1>
+                        <p className="text-gray-500 text-xs font-mono tracking-[0.2em] mt-1">
+                            BATCH SCHEDULE AND TIMELINE
+                        </p>
+                    </div>
+                    {isRefreshing && (
+                        <div className="text-blue-400 text-xs font-mono animate-pulse">
+                            UPDATING LIVE DATA...
+                        </div>
+                    )}
                 </div>
 
                 {/* Controls */}
@@ -340,7 +356,7 @@ const Progress: React.FC = () => {
                     </label>
 
                     <button
-                        onClick={fetchData}
+                        onClick={() => fetchData(false)}
                         className="px-6 py-2 bg-white/10 text-white border border-white/50 text-xs font-bold tracking-widest font-tech rounded-sm hover:bg-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.4)] transition-all duration-300"
                     >
                         REFRESH DATA
@@ -373,6 +389,8 @@ const Progress: React.FC = () => {
                         slotMaxTime="22:00:00"
                         slotDuration="01:00:00"
                         eventDisplay="block"
+                        nowIndicator={true} // Shows current time line
+                        datesSet={handleDatesSet} // Auto-refresh on view/date change
                     />
                 </div>
 

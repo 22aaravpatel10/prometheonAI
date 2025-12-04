@@ -200,9 +200,52 @@ async function addEventsFromPlan(equipmentId: string, planItems: any[]) {
   return { success: true, count: createdEvents.length };
 }
 
+// Mock Chat Handler for Simulation Mode
+async function handleMockChat(messages: any[]) {
+  const lastMessage = messages[messages.length - 1];
+  const content = lastMessage.content.toLowerCase();
+
+  // Simple keyword matching to simulate tool usage
+  if (content.includes('schedule') || content.includes('calendar') || content.includes('events')) {
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+
+    const events = await getSchedule(undefined, today.toISOString(), nextWeek.toISOString());
+    const eventSummary = events.map(e => `- ${e.title} (${new Date(e.start).toLocaleDateString()})`).join('\n');
+
+    return {
+      role: 'assistant',
+      content: `[SIMULATION MODE] Here is the schedule for the next 7 days:\n\n${eventSummary || 'No upcoming events found.'}\n\n(Note: Connect OpenAI API Key for full natural language processing)`
+    };
+  }
+
+  if (content.includes('inventory') || content.includes('stock') || content.includes('material')) {
+    // Just fetch a few common materials for demo
+    const materials = await getInventory(['Acetone', 'Methanol', 'Water']);
+    const materialSummary = materials.map(m => `- ${m.description}: ${m.qtyOnHand} ${m.uom}`).join('\n');
+
+    return {
+      role: 'assistant',
+      content: `[SIMULATION MODE] Here is a sample of the current inventory:\n\n${materialSummary}\n\n(Note: Connect OpenAI API Key for full natural language processing)`
+    };
+  }
+
+  return {
+    role: 'assistant',
+    content: `[SIMULATION MODE] I am PrometheonAI. I see you haven't configured an OpenAI API Key yet.\n\nI can still help you with basic tasks:\n- Ask about "schedule" to see upcoming events\n- Ask about "inventory" to check stock levels\n\nTo enable full AI capabilities, please add your OPENAI_API_KEY to the backend environment variables.`
+  };
+}
+
 router.post('/', async (req, res) => {
   try {
     const { messages, actionType, context } = req.body;
+
+    // Check for API Key
+    if (!process.env.OPENAI_API_KEY) {
+      const mockResponse = await handleMockChat(messages);
+      return res.json(mockResponse);
+    }
 
     let currentMessages = [...messages];
 
