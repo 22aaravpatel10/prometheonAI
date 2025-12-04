@@ -451,6 +451,14 @@ For support and questions:
 - **AI Knowledge Base**: New modal in Progress tracking to view AI-generated insights for each process step.
 - **Simulated Research**: Leverages LLM knowledge to provide instant analysis of chemical reactions.
 
+### Recipe Ingestion & Scheduling (New)
+- **PDF Recipe Ingestion**: Upload PDF recipes and use AI to automatically extract structured data (ingredients, steps, outputs).
+- **Recipe Library**: Centralized repository for managing master recipes with version control and status tracking.
+- **Intelligent Scheduling**: Schedule production batches directly from recipes.
+  - Automatically calculates batch end times based on recipe duration.
+  - Auto-scales ingredient quantities based on batch size.
+  - **Inventory Integration**: Automatically deducts raw materials from inventory upon scheduling.
+
 ## Roadmap
 
 - [ ] Advanced reporting and analytics
