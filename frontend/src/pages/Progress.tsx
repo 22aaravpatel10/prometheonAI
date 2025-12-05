@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
+import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -51,7 +52,7 @@ const Progress: React.FC = () => {
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-    const [calendarView, setCalendarView] = useState('resourceTimelineDay'); // Default to Day view as requested
+    const [calendarView, setCalendarView] = useState('resourceTimeGridDay'); // Default to Vertical Resource View
     const [showActualTimes, setShowActualTimes] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -82,11 +83,6 @@ const Progress: React.FC = () => {
             setInitialLoading(false);
             setIsRefreshing(false);
         }
-    };
-
-    const handleDatesSet = () => {
-        // Auto-refresh data when view or date range changes
-        fetchData(false);
     };
 
     const handleEventClick = (clickInfo: any) => {
@@ -326,13 +322,13 @@ const Progress: React.FC = () => {
                             TIMELINE WEEK
                         </button>
                         <button
-                            onClick={() => setCalendarView('resourceTimelineDay')}
-                            className={`px-4 py-2 text-xs font-bold tracking-wider font-tech rounded-sm transition-all duration-300 border ${calendarView === 'resourceTimelineDay'
+                            onClick={() => setCalendarView('resourceTimeGridDay')}
+                            className={`px-4 py-2 text-xs font-bold tracking-wider font-tech rounded-sm transition-all duration-300 border ${calendarView === 'resourceTimeGridDay'
                                 ? 'bg-white/20 border-white text-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
                                 : 'bg-gray-900/50 border-gray-700 text-gray-400 hover:border-white/50 hover:text-white'
                                 }`}
                         >
-                            TIMELINE DAY
+                            SCHEDULE DAY
                         </button>
                         <button
                             onClick={() => setCalendarView('dayGridMonth')}
@@ -377,7 +373,7 @@ const Progress: React.FC = () => {
                     <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                     <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                     <FullCalendar
-                        plugins={[resourceTimelinePlugin, dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                        plugins={[resourceTimelinePlugin, resourceTimeGridPlugin, dayGridPlugin, timeGridPlugin, interactionPlugin]}
                         initialView={calendarView}
                         headerToolbar={{
                             left: 'prev,next today',
@@ -385,19 +381,18 @@ const Progress: React.FC = () => {
                             right: ''
                         }}
                         events={calendarEvents}
-                        resources={calendarView.includes('Timeline') ? resources : undefined}
+                        resources={resources} // Always pass resources, views that don't need them will ignore
                         resourceAreaHeaderContent="Equipment"
                         selectable={user?.role !== 'viewer'}
                         selectMirror={true}
                         eventClick={handleEventClick}
                         select={handleDateSelect}
                         height="auto"
-                        slotMinTime="06:00:00"
-                        slotMaxTime="22:00:00"
+                        slotMinTime="00:00:00"
+                        slotMaxTime="24:00:00"
                         slotDuration="01:00:00"
                         eventDisplay="block"
                         nowIndicator={true} // Shows current time line
-                        datesSet={handleDatesSet} // Auto-refresh on view/date change
                     />
                 </div>
 

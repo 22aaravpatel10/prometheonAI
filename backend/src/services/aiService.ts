@@ -98,7 +98,7 @@ export const aiService = {
             console.error("Error calling OpenAI:", error);
             throw error;
         }
-    }
+    },
     async extractStructure(rawText: string): Promise<any> {
         if (!process.env.OPENAI_API_KEY) {
             console.warn('OPENAI_API_KEY not set. Returning mock structure.');

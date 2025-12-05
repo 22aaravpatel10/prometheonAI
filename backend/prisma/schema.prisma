@@ -301,13 +301,13 @@ model Recipe {
 model RecipeIngredient {
   id          Int      @id @default(autoincrement())
   recipeId    Int      @map("recipe_id")
-  materialId  Int      @map("material_id")
+  materialId  Int?     @map("material_id")
   quantity    Decimal  @db.Decimal(10, 2)
   unit        String
   stepNumber  Int?     @map("step_number")
   
   recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  material    Material? @relation(fields: [materialId], references: [id], onDelete: Cascade)
 
   @@map("recipe_ingredients")
 }

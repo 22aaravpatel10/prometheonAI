@@ -59,7 +59,7 @@ const RecipeIngestionModal: React.FC<RecipeIngestionModalProps> = ({ isOpen, onC
             setTimeout(() => setLoadingStage('Enriching with chemical context...'), 5500);
 
             const token = localStorage.getItem('token');
-            const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/recipes/ingest-pdf`, formData, {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/recipes/ingest-pdf`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     Authorization: `Bearer ${token}`
@@ -84,6 +84,8 @@ const RecipeIngestionModal: React.FC<RecipeIngestionModalProps> = ({ isOpen, onC
 
         try {
             const token = localStorage.getItem('token');
+            console.log('Using API URL:', process.env.REACT_APP_API_URL);
+
             // Transform draft to match backend expected structure if needed
             const recipeData = {
                 name: draft.recipeName,
@@ -95,10 +97,12 @@ const RecipeIngestionModal: React.FC<RecipeIngestionModalProps> = ({ isOpen, onC
                 status: 'draft'
             };
 
-            await axios.post(`${process.env.REACT_APP_API_URL}/api/recipes`, recipeData, {
+            await axios.post(`${process.env.REACT_APP_API_URL}/recipes`, recipeData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            console.log('Recipe saved successfully');
+            setIsLoading(false); // Explicitly stop loading
             onSuccess();
             onClose();
         } catch (err: any) {
