@@ -8,9 +8,18 @@ interface ScheduleRecipeModalProps {
     onClose: () => void;
     onSuccess: () => void;
     equipmentList: any[];
+    initialEquipmentId?: number;
+    initialStartTime?: string;
 }
 
-const ScheduleRecipeModal: React.FC<ScheduleRecipeModalProps> = ({ isOpen, onClose, onSuccess, equipmentList }) => {
+const ScheduleRecipeModal: React.FC<ScheduleRecipeModalProps> = ({
+    isOpen,
+    onClose,
+    onSuccess,
+    equipmentList,
+    initialEquipmentId,
+    initialStartTime
+}) => {
     const [recipes, setRecipes] = useState<any[]>([]);
     const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
     const [formData, setFormData] = useState({
@@ -24,14 +33,27 @@ const ScheduleRecipeModal: React.FC<ScheduleRecipeModalProps> = ({ isOpen, onClo
     useEffect(() => {
         if (isOpen) {
             fetchRecipes();
-            // Set default start time to now + 1 hour, rounded to nearest hour
-            const now = new Date();
-            now.setHours(now.getHours() + 1);
-            now.setMinutes(0);
-            now.setSeconds(0);
-            setFormData(prev => ({ ...prev, startTime: now.toISOString().slice(0, 16) }));
+
+            // Set default start time
+            let defaultStartTime = '';
+            if (initialStartTime) {
+                // Ensure it's in the correct format for datetime-local (YYYY-MM-DDThh:mm)
+                defaultStartTime = new Date(initialStartTime).toISOString().slice(0, 16);
+            } else {
+                const now = new Date();
+                now.setHours(now.getHours() + 1);
+                now.setMinutes(0);
+                now.setSeconds(0);
+                defaultStartTime = now.toISOString().slice(0, 16);
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                startTime: defaultStartTime,
+                equipmentId: initialEquipmentId ? initialEquipmentId.toString() : ''
+            }));
         }
-    }, [isOpen]);
+    }, [isOpen, initialEquipmentId, initialStartTime]);
 
     const fetchRecipes = async () => {
         try {
@@ -64,7 +86,7 @@ const ScheduleRecipeModal: React.FC<ScheduleRecipeModalProps> = ({ isOpen, onClo
 
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${process.env.REACT_APP_API_URL}/api/batches/schedule`, {
+            await axios.post(`${process.env.REACT_APP_API_URL}/api/batches/schedule-from-recipe`, {
                 recipeId: formData.recipeId,
                 equipmentId: formData.equipmentId,
                 startTime: formData.startTime,

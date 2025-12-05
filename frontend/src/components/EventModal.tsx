@@ -373,6 +373,15 @@ const EventModal: React.FC<EventModalProps> = ({
                   VIEW AI ANALYSIS
                 </button>
               )}
+              {!isNewEvent && formData.type === 'batch' && (
+                <button
+                  type="button"
+                  onClick={() => window.location.href = `/batches/${event.id}/execute`}
+                  className="px-4 py-2 bg-green-900/20 text-green-400 border border-green-900/50 rounded-sm hover:bg-green-900/40 hover:text-green-300 font-tech text-sm tracking-wider"
+                >
+                  EXECUTE
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onClose}

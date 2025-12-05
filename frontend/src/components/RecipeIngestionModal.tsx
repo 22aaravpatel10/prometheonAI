@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { X, Upload, FileText, Check, AlertTriangle, Loader } from 'lucide-react';
 
@@ -22,7 +22,16 @@ const RecipeIngestionModal: React.FC<RecipeIngestionModalProps> = ({ isOpen, onC
     const [loadingStage, setLoadingStage] = useState<string>('');
     const [draft, setDraft] = useState<DraftRecipe | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [availableMaterials, setAvailableMaterials] = useState<any[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            axios.get(`${process.env.REACT_APP_API_URL}/api/materials`)
+                .then(res => setAvailableMaterials(res.data))
+                .catch(err => console.error('Failed to fetch materials:', err));
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -199,9 +208,22 @@ const RecipeIngestionModal: React.FC<RecipeIngestionModalProps> = ({ isOpen, onC
                                                         <p className="text-white font-medium">{ing.name}</p>
                                                         <p className="text-xs text-slate-400">{ing.quantity} {ing.unit}</p>
                                                     </div>
-                                                    <span className={`text-xs px-2 py-1 rounded-full ${ing.materialId ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                                        {ing.materialId ? 'Mapped' : 'New Material'}
-                                                    </span>
+
+                                                    {/* Active Resolution Dropdown */}
+                                                    <select
+                                                        className={`text-xs bg-slate-800 border ${ing.materialId ? 'border-green-500/50 text-green-400' : 'border-yellow-500/50 text-yellow-400'} rounded px-2 py-1 focus:outline-none max-w-[200px]`}
+                                                        value={ing.materialId || ""}
+                                                        onChange={(e) => {
+                                                            const newIngredients = [...draft.ingredients];
+                                                            newIngredients[idx].materialId = e.target.value ? parseInt(e.target.value) : null;
+                                                            setDraft({ ...draft, ingredients: newIngredients });
+                                                        }}
+                                                    >
+                                                        <option value="">Create New Material</option>
+                                                        {availableMaterials.map(m => (
+                                                            <option key={m.id} value={m.id}>{m.name} ({m.currentQuantity} {m.unit})</option>
+                                                        ))}
+                                                    </select>
                                                 </div>
                                             ))}
                                         </div>

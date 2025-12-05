@@ -114,7 +114,18 @@ router.get('/:id', authenticateToken, requireReadAccess, async (req, res) => {
     const batchEvent = await prisma.batchEvent.findUnique({
       where: { id },
       include: {
-        equipment: { select: { id: true, name: true } }
+        equipment: { select: { id: true, name: true } },
+        recipe: {
+          include: {
+            steps: true,
+            ingredients: {
+              include: {
+                material: true
+              }
+            },
+            outputs: true
+          }
+        }
       }
     });
 
@@ -250,7 +261,8 @@ import { schedulingService } from '../services/schedulingService';
 // ... existing imports ...
 
 // Schedule a batch from a recipe
-router.post('/schedule', authenticateToken, requireWriteAccess, async (req, res) => {
+// Schedule a batch from a recipe
+router.post('/schedule-from-recipe', authenticateToken, requireWriteAccess, async (req, res) => {
   try {
     const { recipeId, equipmentId, startTime, batchSize } = req.body;
 

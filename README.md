@@ -459,6 +459,12 @@ For support and questions:
   - Auto-scales ingredient quantities based on batch size.
   - **Inventory Integration**: Automatically deducts raw materials from inventory upon scheduling.
 
+### Batch Cockpit & Execution (New)
+- **Operator Cockpit**: Dedicated execution view for running batches step-by-step.
+- **Interactive Checklists**: Track progress through recipe steps in real-time.
+- **Context-Aware Safety**: Displays specific safety hazards and thermodynamic warnings for the active step.
+- **Material Guidance**: Shows exact ingredient quantities required for the current operation.
+
 ## Roadmap
 
 - [ ] Advanced reporting and analytics

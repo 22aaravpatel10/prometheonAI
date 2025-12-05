@@ -8,6 +8,7 @@ import Progress from './pages/Progress';
 import Users from './pages/Users';
 import Inventory from './pages/Inventory';
 import RecipeLibrary from './pages/RecipeLibrary';
+import BatchExecution from './pages/BatchExecution';
 import './App.css';
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
             <Route path="/equipment" element={<Equipment />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/users" element={<Users />} />
+            <Route path="/batches/:id/execute" element={<BatchExecution />} />
           </Routes>
         </div>
       </Router>

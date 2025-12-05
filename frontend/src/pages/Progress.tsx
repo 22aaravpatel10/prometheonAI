@@ -55,6 +55,7 @@ const Progress: React.FC = () => {
     const [showActualTimes, setShowActualTimes] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [selectedSlot, setSelectedSlot] = useState<{ start: string, resourceId: number } | null>(null);
 
     useEffect(() => {
         fetchData(true);
@@ -117,15 +118,12 @@ const Progress: React.FC = () => {
             return;
         }
 
-        setSelectedEvent({
-            start: selectInfo.start,
-            end: selectInfo.end,
-            equipmentId: equipmentItem.id,
-            equipment: equipmentItem,
-            type: 'batch', // Default to batch event
-            isNew: true
+        // Store slot info and open Recipe Scheduler
+        setSelectedSlot({
+            start: selectInfo.startStr,
+            resourceId: equipmentItem.id
         });
-        setIsModalOpen(true);
+        setIsScheduleModalOpen(true);
     };
 
     const handleEventUpdate = async (updatedEvent: any) => {
@@ -438,12 +436,19 @@ const Progress: React.FC = () => {
             )}
 
             {/* Schedule Recipe Modal */}
-            <ScheduleRecipeModal
-                isOpen={isScheduleModalOpen}
-                onClose={() => setIsScheduleModalOpen(false)}
-                onSuccess={() => fetchData(false)}
-                equipmentList={equipment}
-            />
+            {isScheduleModalOpen && (
+                <ScheduleRecipeModal
+                    isOpen={isScheduleModalOpen}
+                    onClose={() => {
+                        setIsScheduleModalOpen(false);
+                        setSelectedSlot(null);
+                    }}
+                    onSuccess={() => fetchData(false)}
+                    equipmentList={equipment}
+                    initialEquipmentId={selectedSlot?.resourceId}
+                    initialStartTime={selectedSlot?.start}
+                />
+            )}
         </Layout>
     );
 };
