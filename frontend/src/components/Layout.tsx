@@ -42,8 +42,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Recipes', href: '/recipes', icon: FileText },
     { name: 'Equipment', href: '/equipment', icon: Database },
+    { name: 'Digital Twin', href: '/digital-twin', icon: Globe },
     { name: 'Inventory', href: '/inventory', icon: Box },
-    { name: 'Progress', href: '/progress', icon: Activity },
+    { name: 'Scheduler', href: '/scheduler', icon: Activity },
   ];
 
   return (

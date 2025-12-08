@@ -281,14 +281,24 @@ const RecipeIngestionModal: React.FC<RecipeIngestionModalProps> = ({ isOpen, onC
                         >
                             Discard
                         </button>
-                        <button
-                            onClick={handleSave}
-                            disabled={isLoading}
-                            className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-                        >
-                            {isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                            Approve & Save Recipe
-                        </button>
+                        <div className="flex flex-col items-end gap-2">
+                            {draft.ingredients.some(ing => !ing.materialId) && (
+                                <span className="text-xs text-red-400">
+                                    All ingredients must be mapped to a material before saving.
+                                </span>
+                            )}
+                            <button
+                                onClick={handleSave}
+                                disabled={isLoading || draft.ingredients.some(ing => !ing.materialId)}
+                                className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isLoading || draft.ingredients.some(ing => !ing.materialId)
+                                        ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                        : 'bg-green-600 hover:bg-green-500 text-white'
+                                    }`}
+                            >
+                                {isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                Approve & Save Recipe
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

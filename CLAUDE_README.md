@@ -31,7 +31,28 @@ docker-compose up -d
 
 **Access the app:** http://localhost:3000
 
+## 🚀 LATEST SESSION UPDATE: Palantir-lite Architecture (Strict Ontology)
+
+**Request**: "Enforce Objects and Links architecture (Palantir-lite) with strict Master/Instance separation."
+
+**Accomplished:**
+1.  **Strict Ontology (Database)**:
+    - **Change**: `RecipeIngredient` now requires a valid `materialId` (Int, non-nullable).
+    - **Impact**: Master Recipes cannot contain "ghost" ingredients. They must link to entries in the Material Knowledge Graph.
+    - **Migration**: Applied `enforce_strict_recipe_ingredients`.
+
+2.  **Resolution Workflow (Frontend Guardrails)**:
+    - **Change**: `RecipeIngestionModal.tsx` updated.
+    - **Feature**: The "Approve & Save" button is **HARD BLOCKED** until all extracted ingredients are resolved to a Material ID.
+    - **Logic**: Forces the "Entity Resolution" phase to complete *before* data enters the Master Record.
+
+3.  **Knowledge Enrichment (AI Pipeline)**:
+    - **Feature**: `aiService.ts` now runs a 2-pass extraction.
+        1.  **Structure**: Extracts steps, ingredients, yields.
+        2.  **Context**: Extracts thermodynamic data (`enthalpy`, `exothermic`) and safety risks (`runawayRisk`) into `ReactionContext`.
+
 ---
+
 
 ## ✨ NEW FEATURES ADDED (Latest Session)
 
@@ -291,7 +312,7 @@ POSTGRES_PORT=5433  # Changed from 5432
 - **Image:** postgres:15-alpine
 - **Credentials:** batch_user / your-secure-password-here
 - **Database:** batch_processing_db
-- **Volumes:** Persistent data storage
+- **Scheduler**: Interactive Gantt chart (`/scheduler`).
 
 ---
 

@@ -12,6 +12,16 @@ import EventModal from '../components/EventModal';
 import ExportButtons from '../components/ExportButtons';
 import ScheduleRecipeModal from '../components/ScheduleRecipeModal';
 import { useAuth } from '../contexts/AuthContext';
+import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    ReferenceLine
+} from 'recharts';
 
 interface Equipment {
     id: number;
@@ -44,7 +54,7 @@ interface MaintenanceEvent {
     equipment: Equipment;
 }
 
-const Progress: React.FC = () => {
+const Scheduler: React.FC = () => {
     const { user } = useAuth();
     const [equipment, setEquipment] = useState<Equipment[]>([]);
     const [batchEvents, setBatchEvents] = useState<BatchEvent[]>([]);
@@ -296,7 +306,7 @@ const Progress: React.FC = () => {
                 <div className="mb-8 animate-fade-in-up flex justify-between items-end">
                     <div>
                         <h1 className="text-3xl font-bold text-white font-tech tracking-wider">
-                            PROGRESS <span className="text-[#007A73]">TRACKING</span>
+                            SCHEDULER <span className="text-[#007A73]">MASTER</span>
                         </h1>
                         <p className="text-gray-500 text-xs font-mono tracking-[0.2em] mt-1">
                             BATCH SCHEDULE AND TIMELINE
@@ -415,6 +425,82 @@ const Progress: React.FC = () => {
                 </div>
             </div>
 
+            {/* Utility Load Graphs */}
+            <div className="mt-8 px-4 sm:px-6 lg:px-8">
+                <h2 className="text-xl font-tech text-white mb-4 tracking-wider">UTILITY <span className="text-[#007A73]">LOAD PROJECTIONS</span></h2>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Steam Load Chart */}
+                    <div className="bg-[#0a0a0a] border border-white/10 rounded-sm p-4 h-80 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2 text-xs text-gray-500 font-mono">STEAM (TPH)</div>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                                data={[
+                                    { time: '00:00', load: 2.5, capacity: 5 },
+                                    { time: '04:00', load: 3.8, capacity: 5 },
+                                    { time: '08:00', load: 4.8, capacity: 5 }, // Near limit
+                                    { time: '12:00', load: 4.2, capacity: 5 },
+                                    { time: '16:00', load: 3.5, capacity: 5 },
+                                    { time: '20:00', load: 2.0, capacity: 5 },
+                                    { time: '23:59', load: 1.5, capacity: 5 },
+                                ]}
+                                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                            >
+                                <defs>
+                                    <linearGradient id="colorSteam" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#007A73" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#007A73" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                <XAxis dataKey="time" stroke="#666" tick={{ fontSize: 12 }} />
+                                <YAxis stroke="#666" tick={{ fontSize: 12 }} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#000', border: '1px solid #333' }}
+                                    itemStyle={{ color: '#fff' }}
+                                />
+                                <ReferenceLine y={5} label="Boiler Max" stroke="red" strokeDasharray="3 3" />
+                                <Area type="monotone" dataKey="load" stroke="#007A73" fillOpacity={1} fill="url(#colorSteam)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    {/* Power Load Chart */}
+                    <div className="bg-[#0a0a0a] border border-white/10 rounded-sm p-4 h-80 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2 text-xs text-gray-500 font-mono">POWER (kW)</div>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                                data={[
+                                    { time: '00:00', load: 120, capacity: 500 },
+                                    { time: '04:00', load: 150, capacity: 500 },
+                                    { time: '08:00', load: 380, capacity: 500 },
+                                    { time: '12:00', load: 420, capacity: 500 },
+                                    { time: '16:00', load: 350, capacity: 500 },
+                                    { time: '20:00', load: 200, capacity: 500 },
+                                    { time: '23:59', load: 150, capacity: 500 },
+                                ]}
+                                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                            >
+                                <defs>
+                                    <linearGradient id="colorPower" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                <XAxis dataKey="time" stroke="#666" tick={{ fontSize: 12 }} />
+                                <YAxis stroke="#666" tick={{ fontSize: 12 }} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#000', border: '1px solid #333' }}
+                                    itemStyle={{ color: '#fff' }}
+                                />
+                                <ReferenceLine y={500} label="Grid Max" stroke="red" strokeDasharray="3 3" />
+                                <Area type="monotone" dataKey="load" stroke="#8884d8" fillOpacity={1} fill="url(#colorPower)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
             {/* Event Modal */}
             {isModalOpen && selectedEvent && (
                 <EventModal
@@ -448,4 +534,4 @@ const Progress: React.FC = () => {
     );
 };
 
-export default Progress;
+export default Scheduler;

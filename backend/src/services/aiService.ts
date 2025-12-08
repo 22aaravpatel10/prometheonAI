@@ -119,7 +119,9 @@ export const aiService = {
 
         const prompt = `
             Extract the structured recipe information from the following text.
-            Identify the recipe name, list of ingredients with quantities, list of steps with descriptions and conditions, and expected outputs.
+            Identify the recipe name, list of ingredients with quantities, list of steps with descriptions and conditions, expected outputs, and UTILITY REQUIREMENTS.
+            
+            Look for columns or text labeled 'Steam', 'Power', or 'Heat Load'. Extract these values into the utilityRequirements object for each step.
 
             Text:
             ${rawText.substring(0, 15000)} // Limit context window
@@ -132,7 +134,8 @@ export const aiService = {
                     "name": "string", 
                     "description": "string", 
                     "materials": [{ "name": "string", "quantity": number, "unit": "string" }], 
-                    "conditions": { "temp": number, "pressure": number } 
+                    "conditions": { "temp": number, "pressure": number },
+                    "utilityRequirements": { "steam": "string", "power": "string", "heatLoad": "string" }
                 }],
                 "outputs": [{ "name": "string", "type": "product|waste", "amount": number, "unit": "string" }]
             }
@@ -156,13 +159,60 @@ export const aiService = {
             console.error("Error calling OpenAI:", error);
             throw error;
         }
+    },
+
+    async extractPFDStructure(rawText: string): Promise<any> {
+        if (!process.env.OPENAI_API_KEY) {
+            console.warn('OPENAI_API_KEY not set. Returning mock PFD structure.');
+            return {
+                equipment: [{ tag: "R-101", name: "Reactor 1", type: "Reactor" }],
+                streams: []
+            };
+        }
+
+        const prompt = `
+            Analyze the following text which represents a Process Flow Diagram(PFD) or Equipment List(CSV / Excel extract).
+            
+            1. Identify every Equipment mentioned(Look for tags like R - 101, T - 202, etc.).
+            2. Identify every Input / Output stream.
+            3. Identify Recycle Loops(e.g.if output is "Distilled Xylene" and input is "Xylene", link them).
+
+            Text:
+            ${rawText.substring(0, 15000)}
+
+        Format as JSON:
+        {
+            "equipment": [{ "tag": "string", "name": "string", "type": "string" }],
+                "streams": [{ "name": "string", "from": "string (Equipment Tag)", "to": "string (Equipment Tag)", "material": "string" }],
+                    "loops": [{ "material": "string", "description": "string" }]
+        }
+        `;
+
+        try {
+            const completion = await openai.chat.completions.create({
+                messages: [
+                    { role: "system", content: "You are an expert Process Engineer. Extract PFD topology from text." },
+                    { role: "user", content: prompt }
+                ],
+                model: "gpt-4o",
+                response_format: { type: "json_object" },
+            });
+
+            const content = completion.choices[0].message.content;
+            if (!content) throw new Error("No content received from OpenAI");
+
+            return JSON.parse(content);
+        } catch (error) {
+            console.error("Error calling OpenAI:", error);
+            throw error;
+        }
     }
 };
 
 function getMockAnalysis(stepName: string): ReactionAnalysisResult {
     return {
         reactionType: "Simulated Reaction Analysis",
-        description: `This is a simulated analysis for ${stepName} because the OpenAI API key is missing. In a real scenario, this would contain detailed chemical insights.`,
+        description: `This is a simulated analysis for ${stepName} because the OpenAI API key is missing.In a real scenario, this would contain detailed chemical insights.`,
         thermodynamics: {
             exothermic: true,
             enthalpy: "-150 kJ/mol",

@@ -4,11 +4,12 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import Dashboard from './pages/Dashboard';
 import Equipment from './pages/Equipment';
-import Progress from './pages/Progress';
+import Scheduler from './pages/Scheduler';
 import Users from './pages/Users';
 import Inventory from './pages/Inventory';
 import RecipeLibrary from './pages/RecipeLibrary';
 import BatchExecution from './pages/BatchExecution';
+import DigitalTwin from './pages/DigitalTwin';
 import './App.css';
 
 function App() {
@@ -20,9 +21,10 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/recipes" element={<RecipeLibrary />} />
-            <Route path="/progress" element={<Progress />} />
+            <Route path="/scheduler" element={<Scheduler />} />
             <Route path="/equipment" element={<Equipment />} />
             <Route path="/inventory" element={<Inventory />} />
+            <Route path="/digital-twin" element={<DigitalTwin />} />
             <Route path="/users" element={<Users />} />
             <Route path="/batches/:id/execute" element={<BatchExecution />} />
           </Routes>

@@ -1,10 +1,7 @@
-# Batch Processing Assistant
-
-A comprehensive web application for managing batch production schedules and maintenance events in manufacturing environments.
-
-## Features
-
-- **Interactive Calendar**: Timeline and monthly views showing batch and maintenance schedules
+- **Intelligent Scheduling**: 
+  - Create Batches directly from Master Recipes
+  - Transactional Inventory Deduction (Auto-scales quantities)
+  - Context-Aware Safety & Thermodynamics data for every step
 - **Comprehensive Equipment Management**: Add and manage production equipment with detailed configuration
   - Quick-add common equipment with pre-filled defaults
   - Full equipment profiles with custom IDs, locations, and specifications
@@ -16,7 +13,6 @@ A comprehensive web application for managing batch production schedules and main
 - **Actual vs Planned Tracking**: Track actual start/end times against planned schedules
 - **Email Notifications**: Automatic reminders for upcoming events
 - **Export Capabilities**: Export schedules to PDF and Excel formats
-- **Import Ready**: Placeholder for Excel import functionality
 
 ## Technology Stack
 
@@ -458,6 +454,11 @@ For support and questions:
   - Automatically calculates batch end times based on recipe duration.
   - Auto-scales ingredient quantities based on batch size.
   - **Inventory Integration**: Automatically deducts raw materials from inventory upon scheduling.
+
+### Palantir-lite Architecture (New)
+- **Strict Ontology Enforcement**: Database schema now enforces that *all* Recipe Ingredients must link to a real Material ID. No "text-only" ingredients allowed in Master Data.
+- **Ingestion Guardrails**: Frontend Ingestion Workflow ("Resolution Phase") prevents saving a recipe until every extracted entity is mapped to the Inventory Knowledge Graph.
+- **Context Enrichment**: AI pipeline extracts thermodynamic (`enthalpy`, `exothermic`) and safety data (`runawayRisk`) for each step, stored as structured JSON in `ReactionContext`.
 
 ### Batch Cockpit & Execution (New)
 - **Operator Cockpit**: Dedicated execution view for running batches step-by-step.

@@ -118,6 +118,9 @@ model Equipment {
   maintenanceEvents MaintenanceEvent[]
   specialFeatures   EquipmentFeature[]
   recipeSteps       RecipeStep[]
+  linkedTanks       Tank[] // Which tanks feed this equipment?
+  maxSteamLoad      Decimal?  @map("max_steam_load") @db.Decimal(10, 2) // TPH
+  maxPowerLoad      Decimal?  @map("max_power_load") @db.Decimal(10, 2) // KW
 
   @@map("equipment")
 }
@@ -143,6 +146,7 @@ model BatchEvent {
   productName    String      @map("product_name")
   batchSize      Decimal?    @map("batch_size") @db.Decimal(10, 2)
   status         BatchStatus @default(scheduled)
+  campaignId     Int?        @map("campaign_id") // Link to parent campaign
   recipeId       Int?        @map("recipe_id") // Link to recipe if batch created from recipe
   recipeVersion  Int?        @map("recipe_version") // Recipe version used
   recipeNotes    String?     @map("recipe_notes") // Notes about deviations from recipe
@@ -156,6 +160,7 @@ model BatchEvent {
 
   // Relations
   equipment     Equipment              @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  campaign      Campaign?              @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   recipe        Recipe?                @relation(fields: [recipeId], references: [id], onDelete: SetNull)
   notifications Notification[]
   materials     BatchMaterial[]
@@ -228,6 +233,7 @@ model Material {
   currentQuantity Decimal  @default(0) @map("current_quantity") @db.Decimal(10, 2)
   unit            String // kg, liters, units, etc.
   minimumStock    Decimal  @map("minimum_stock") @db.Decimal(10, 2)
+  grade           MaterialGrade @default(fresh)
   supplier        String?
   costPerUnit     Decimal? @map("cost_per_unit") @db.Decimal(10, 2)
   casNumber       String?  @map("cas_number") // CAS Registry Number
@@ -241,6 +247,7 @@ model Material {
   recipeMaterials  RecipeMaterial[]
   ingredients      RecipeIngredient[]
   safetyDataSheets SafetyDataSheet[]
+  tanks            Tank[]
 
   @@map("materials")
 }
@@ -294,6 +301,7 @@ model Recipe {
   ingredients RecipeIngredient[]
   outputs     RecipeOutput[]
   batches    BatchEvent[]
+  campaigns   Campaign[]
 
   @@map("recipes")
 }
@@ -301,13 +309,13 @@ model Recipe {
 model RecipeIngredient {
   id          Int      @id @default(autoincrement())
   recipeId    Int      @map("recipe_id")
-  materialId  Int?     @map("material_id")
+  materialId  Int      @map("material_id")
   quantity    Decimal  @db.Decimal(10, 2)
   unit        String
   stepNumber  Int?     @map("step_number")
   
   recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  material    Material? @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
 
   @@map("recipe_ingredients")
 }
@@ -339,6 +347,9 @@ model RecipeStep {
   pressureUnit      String?  @map("pressure_unit") // bar, psi, atm
   instructions      String?
   processParameters Json?    @map("process_parameters") // Additional parameters as JSON
+  steamRequired     Decimal? @map("steam_required") @db.Decimal(10, 2) // TPH
+  powerRequired     Decimal? @map("power_required") @db.Decimal(10, 2) // KW
+  chilledWaterRequired Decimal? @map("chilled_water_required") @db.Decimal(10, 2) // TR
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -471,3 +482,44 @@ model BatchTelemetry {
   @@index([batchEventId, timestamp])
   @@map("batch_telemetry")
 }
+enum MaterialGrade {
+  fresh
+  recycled
+  crude
+  waste
+  intermediate
+}
+
+model Tank {
+  id          Int       @id @default(autoincrement())
+  name        String    // e.g. "Solvent Recovery Tank 1"
+  materialId  Int?      @map("material_id") // What is currently in it?
+  grade       MaterialGrade @default(fresh)
+  capacity    Decimal   @db.Decimal(10, 2) // Max Volume
+  level       Decimal   @db.Decimal(10, 2) // Current Volume
+  location    String?
+  equipmentId Int?      @map("equipment_id") // Linked Equipment feeding this tank
+
+  material    Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+  equipment   Equipment? @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+
+  @@map("tanks")
+}
+
+model Campaign {
+  id             Int       @id @default(autoincrement())
+  name           String    // "Dicamba Dec 2025 Campaign"
+  recipeId       Int       @map("recipe_id")
+  targetQuantity Decimal   @map("target_quantity") @db.Decimal(10, 2)
+  startDate      DateTime  @map("start_date") @db.Timestamptz
+  status         String    // planned, active, completed, halted
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  
+  recipe         Recipe       @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  batches        BatchEvent[] // One campaign spawns many batches
+
+  @@map("campaigns")
+}
+
+
