@@ -1,0 +1,5 @@
+PROCESS STEPS,L. P. Steam (Peak Load),Cooling Water,Chilled Water,Power
+Hydrolysis,15,0,0,50
+Exothermic Reaction,0,1200,0,100
+Crystallization,5,0,300,20
+Filtration,0,0,0,10

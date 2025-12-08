@@ -32,7 +32,8 @@ router.get('/', authenticateToken, requireReadAccess, async (req: AuthRequest, r
             batchEvents: true,
             maintenanceEvents: true
           }
-        }
+        },
+        linkedTanks: true
       },
       orderBy: [
         { isCustom: 'asc' },
@@ -51,7 +52,7 @@ router.get('/', authenticateToken, requireReadAccess, async (req: AuthRequest, r
 router.get('/:id', authenticateToken, requireReadAccess, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    
+
     const equipment = await prisma.equipment.findUnique({
       where: { id },
       include: {
@@ -121,14 +122,14 @@ router.put('/:id', authenticateToken, requireWriteAccess, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { error, value } = equipmentSchema.validate(req.body);
-    
+
     if (error) {
       return res.status(400).json({ error: error.details[0].message });
     }
 
     // Check if another equipment with the same name exists
     const existingEquipment = await prisma.equipment.findFirst({
-      where: { 
+      where: {
         name: value.name,
         id: { not: id }
       }
@@ -181,7 +182,7 @@ router.delete('/:id', authenticateToken, requireWriteAccess, async (req, res) =>
     }
 
     if (equipment._count.batchEvents > 0 || equipment._count.maintenanceEvents > 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Cannot delete equipment with associated events',
         message: `This equipment has ${equipment._count.batchEvents} batch events and ${equipment._count.maintenanceEvents} maintenance events`
       });

@@ -306,7 +306,7 @@ const Scheduler: React.FC = () => {
                 <div className="mb-8 animate-fade-in-up flex justify-between items-end">
                     <div>
                         <h1 className="text-3xl font-bold text-white font-tech tracking-wider">
-                            SCHEDULER <span className="text-[#007A73]">MASTER</span>
+                            SCHEDULE <span className="text-[#007A73]">MASTER</span>
                         </h1>
                         <p className="text-gray-500 text-xs font-mono tracking-[0.2em] mt-1">
                             BATCH SCHEDULE AND TIMELINE

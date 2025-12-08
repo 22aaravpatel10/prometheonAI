@@ -29,7 +29,7 @@ class EmailService {
       console.log('Email service initialized with SendGrid');
     } else if (process.env.SMTP_HOST) {
       // Use SMTP
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || '587'),
         secure: process.env.SMTP_SECURE === 'true',
@@ -247,7 +247,7 @@ class EmailService {
       // Send batch reminders
       for (const batchEvent of upcomingBatchEvents) {
         const success = await this.sendBatchReminder(batchEvent.id, userEmails);
-        
+
         if (success) {
           // Record notifications
           await Promise.all(
@@ -269,7 +269,7 @@ class EmailService {
       // Send maintenance reminders
       for (const maintenanceEvent of upcomingMaintenanceEvents) {
         const success = await this.sendMaintenanceReminder(maintenanceEvent.id, userEmails);
-        
+
         if (success) {
           // Record notifications
           await Promise.all(

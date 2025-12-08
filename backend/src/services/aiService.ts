@@ -121,7 +121,9 @@ export const aiService = {
             Extract the structured recipe information from the following text.
             Identify the recipe name, list of ingredients with quantities, list of steps with descriptions and conditions, expected outputs, and UTILITY REQUIREMENTS.
             
-            Look for columns or text labeled 'Steam', 'Power', or 'Heat Load'. Extract these values into the utilityRequirements object for each step.
+            Look for columns or text labeled 'Steam', 'Power', 'Heat Load', 'Cooling' or 'Chilled Water'. 
+            Extract these values into the utilityRequirements object for each step.
+            Convert to standard units: Steam (TPH), Power (kW), Cooling/Chilled Water (TR). Return numbers only.
 
             Text:
             ${rawText.substring(0, 15000)} // Limit context window
@@ -135,7 +137,7 @@ export const aiService = {
                     "description": "string", 
                     "materials": [{ "name": "string", "quantity": number, "unit": "string" }], 
                     "conditions": { "temp": number, "pressure": number },
-                    "utilityRequirements": { "steam": "string", "power": "string", "heatLoad": "string" }
+                    "utilityRequirements": { "steam": number, "power": number, "cooling": number, "chilledWater": number }
                 }],
                 "outputs": [{ "name": "string", "type": "product|waste", "amount": number, "unit": "string" }]
             }

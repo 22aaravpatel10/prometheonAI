@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import Joi from 'joi';
+import axios from 'axios';
 import { authenticateToken, requireWriteAccess, AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
@@ -25,7 +26,13 @@ const materialSchema = Joi.object({
   safetyTags: Joi.array().items(Joi.string()).optional()
 });
 
-// ... (transactionSchema remains the same)
+const transactionSchema = Joi.object({
+  materialId: Joi.number().required(),
+  batchEventId: Joi.number().optional(),
+  transactionType: Joi.string().valid('consumed', 'received', 'adjusted').required(),
+  quantity: Joi.number().required(),
+  notes: Joi.string().optional().allow('')
+});
 
 // Lookup GHS Tags via AI and PubChem
 router.post('/lookup-ghs', authenticateToken, async (req, res) => {
